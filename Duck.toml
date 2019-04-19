@@ -1,0 +1,5 @@
+# sample file
+
+[hello]
+command = ["echo", "hello 🦆"]
+
