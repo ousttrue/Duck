@@ -24,7 +24,7 @@ class Duck:
     def start(self, starts: List[str]) -> None:
         if not starts:
             if len(self.toml) == 1:
-                starts = self.toml.keys()
+                starts = [k for k in self.toml.keys()]
             elif '@default' in self.toml:
                 starts = [self.toml['@default']]
             else:
