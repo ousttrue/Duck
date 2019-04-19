@@ -23,3 +23,16 @@ $ duck
 hello 🦆
 ```
 
+```toml
+@default = "build"
+
+[generate]
+cwd = "build"
+command = ["cmake", ".."]
+
+[build]
+depends = ["generate"]
+cwd = "build"
+command = ["make"]
+```
+

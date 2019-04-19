@@ -5,10 +5,18 @@
 @default = "hello"
 
 # entries
+[chcd]
+cwd = "tmp"
+command = ["pwd"]
+
+[rmdir]
+depends = ["chcd"]
+command = ["rmdir", "tmp"]
+
 [duck]
 command = ["echo", "🐣🐣🐣"]
 
 [hello]
-depends = ["duck"]
+depends = ["duck", "rmdir"]
 command = ["echo", "hello 🦆"]
 

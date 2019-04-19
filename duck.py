@@ -2,10 +2,67 @@ import sys
 import subprocess
 import pathlib
 import argparse
-from typing import MutableMapping, Any
+from typing import MutableMapping, Any, List
 import toml
 
 VERSION = [0, 1]
+
+
+class Duck:
+    def __init__(self, path: pathlib.Path, verbose: bool) -> None:
+        self.path = path
+        self.toml = toml.load(path)
+        self.verbose = False
+        if '@verbose' in self.toml:
+            self.verbose = self.toml['@verbose']
+        if verbose:
+            self.verbose = True
+        if self.verbose:
+            print(self.toml)
+            print()
+
+    def start(self, starts: List[str]) -> None:
+        if not starts:
+            if len(self.toml) == 1:
+                starts = self.toml.keys()
+            elif '@default' in self.toml:
+                starts = [self.toml['@default']]
+            else:
+                raise RuntimeError('no starts')
+        for key in starts:
+            self.do_entry(key)
+
+    def do_entry(self, key: str, level=0) -> None:
+        indent = '  ' * level
+
+        # if exists ?
+        entry = self.toml.get(key)
+        if not entry:
+            raise KeyError(f'{key}: {self.toml}')
+
+        # depends
+        depends = entry.get('depends')
+        if depends:
+            for d in depends:
+                self.do_entry(d, level + 1)
+
+        # do
+        if self.verbose:
+            print(f'{indent}[{key}]')
+            print(f'{indent}{entry}')
+
+        cwd = entry.get('cwd')
+        command = entry.get('command')
+        if command:
+            path = self.path.parent
+            if cwd:
+                # relative from Duck.toml file
+                path = path / cwd
+                if not path.exists():
+                    path.mkdir(parents=True, exist_ok=True)
+            if self.verbose:
+                print(f'{indent}{path}')
+            subprocess.run(entry['command'], cwd=path)
 
 
 def find_toml(current: pathlib.Path) -> pathlib.Path:
@@ -18,30 +75,6 @@ def find_toml(current: pathlib.Path) -> pathlib.Path:
             return duck_file
 
         current = current.parent
-
-
-def do_entry(duck_toml: MutableMapping[str, Any],
-             key: str,
-             verbose=False,
-             level=0) -> None:
-    indent = '  ' * level
-
-    # if exists ?
-    entry = duck_toml.get(key)
-    if not entry:
-        raise KeyError(f'{key}: {duck_toml}')
-
-    # depends
-    depends = entry.get('depends')
-    if depends:
-        for d in depends:
-            do_entry(duck_toml, d, verbose, level + 1)
-
-    # do
-    if verbose:
-        print(f'{indent}[{key}]')
-        print(f'{indent}{entry}')
-    subprocess.run(entry['command'])
 
 
 def main():
@@ -60,27 +93,8 @@ def main():
     here = pathlib.Path('.').resolve()
     duck_file = find_toml(here)
 
-    duck_toml = toml.load(duck_file)
-
-    verbose = args.verbose
-    if '@verbose' in duck_toml:
-        verbose = duck_toml['@verbose']
-    if verbose:
-        print(duck_toml)
-        print()
-
-    starts = args.starts
-    if not starts:
-        if len(duck_toml) == 1:
-            starts = duck_toml.keys()
-        elif '@default' in duck_toml:
-            starts = [duck_toml['@default']]
-        else:
-            parser.print_help()
-            sys.exit()
-
-    for key in starts:
-        do_entry(duck_toml, key, verbose)
+    duck = Duck(duck_file, args.verbose)
+    duck.start(args.starts)
 
 
 if __name__ == '__main__':
