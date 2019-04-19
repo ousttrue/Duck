@@ -1,5 +1,14 @@
 # sample file
 
+# global options
+@verbose = true
+@default = "hello"
+
+# entries
+[duck]
+command = ["echo", "🐣🐣🐣"]
+
 [hello]
+depends = ["duck"]
 command = ["echo", "hello 🦆"]
 
