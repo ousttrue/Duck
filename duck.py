@@ -9,6 +9,14 @@ import toml
 VERSION = [0, 1]
 
 
+def find_windows_cmake() -> Optional[pathlib.Path]:
+    cmake = pathlib.Path("C:/Program Files/CMake/bin/cmake.exe")
+    if cmake.exists():
+        return cmake
+
+    return None
+
+
 class Duck:
     def __init__(self, path: pathlib.Path, verbose: bool, system: str) -> None:
         self.path = path
@@ -30,6 +38,16 @@ class Duck:
         if isinstance(command, dict):
             command = command[self.system]
         return command
+
+    def prepare_command(self, command: List[str]) -> None:
+        if command[0] == '::cmake::':
+            if self.system == 'windows':
+                cmake = find_windows_cmake()
+                if cmake:
+                    command[0] = str(cmake)
+                    return
+
+            command[0] = 'cmake'
 
     def start(self, starts: List[str]) -> None:
         if not starts:
@@ -75,8 +93,16 @@ class Duck:
                     path.mkdir(parents=True, exist_ok=True)
             if self.verbose:
                 print(f'{indent}{path}')
+
+            self.prepare_command(command)
+
+            encoding = entry.get('encoding')
+
             try:
-                subprocess.run(command, cwd=path)
+                subprocess.run(command,
+                               cwd=path,
+                               encoding=encoding,
+                               universal_newlines=True)
             except FileNotFoundError as e:
                 print(f'{command[0]}: {e}')
                 sys.exit(1)
