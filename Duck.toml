@@ -1,22 +1,22 @@
 # sample file
 
-# global options
-@verbose = true
-@default = "run"
-
 # entries
 [chcd]
 cwd = "tmp"
-command = ["pwd"]
+command.linux = ["pwd"]
+command.windows = ["cmd", "/c", "cd"]
 
 [rmdir]
 depends = ["chcd"]
-command = ["rmdir", "tmp"]
+command.linux = ["rmdir", "tmp"]
+command.windows = ["cmd", "/c", "rmdir", "tmp"]
 
 [duck]
-command = ["echo", "🐣🐣🐣"]
+command.linux = ["echo", "🐣🐣🐣"]
+command.windows = ["cmd", "/c", "echo", "ooo"]
 
 [run]
 depends = ["duck", "rmdir"]
-command = ["echo", "hello 🦆"]
+command.linux = ["echo", "hello 🦆"]
+command.windows = ["cmd", "/c", "echo", "hello hello"]
 

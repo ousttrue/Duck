@@ -1,14 +1,16 @@
+import sys
 import subprocess
+import platform
 import pathlib
 import argparse
-from typing import List
+from typing import List, Any, Optional
 import toml
 
 VERSION = [0, 1]
 
 
 class Duck:
-    def __init__(self, path: pathlib.Path, verbose: bool) -> None:
+    def __init__(self, path: pathlib.Path, verbose: bool, system: str) -> None:
         self.path = path
         self.toml = toml.load(path)
         self.verbose = False
@@ -19,6 +21,15 @@ class Duck:
         if self.verbose:
             print(self.toml)
             print()
+        self.system = system
+
+    def get_command(self, entry: Any) -> Optional[List[str]]:
+        command = entry.get('command')
+        if not command:
+            return None
+        if isinstance(command, dict):
+            command = command[self.system]
+        return command
 
     def start(self, starts: List[str]) -> None:
         if not starts:
@@ -56,7 +67,7 @@ class Duck:
             print(f'{indent}{entry}')
 
         cwd = entry.get('cwd')
-        command = entry.get('command')
+        command = self.get_command(entry)
         if command:
             path = self.path.parent
             if cwd:
@@ -66,7 +77,11 @@ class Duck:
                     path.mkdir(parents=True, exist_ok=True)
             if self.verbose:
                 print(f'{indent}{path}')
-            subprocess.run(entry['command'], cwd=path)
+            try:
+                subprocess.run(command, cwd=path)
+            except FileNotFoundError as e:
+                print(f'{command[0]}: {e}')
+                sys.exit(1)
 
 
 def find_toml(current: pathlib.Path) -> pathlib.Path:
@@ -97,7 +112,7 @@ def main():
     here = pathlib.Path('.').resolve()
     duck_file = find_toml(here)
 
-    duck = Duck(duck_file, args.verbose)
+    duck = Duck(duck_file, args.verbose, platform.system().lower())
     duck.start(args.starts)
 
 
