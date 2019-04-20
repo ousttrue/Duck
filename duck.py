@@ -24,21 +24,27 @@ class Duck:
     def start(self, starts: List[str]) -> None:
         if not starts:
             if len(self.toml) == 1:
-                starts = [k for k in self.toml.keys()]
+                starts = [k for k in self.toml.keys() if not k.startswith('@')]
             elif '@default' in self.toml:
                 starts = [self.toml['@default']]
             else:
                 raise RuntimeError('no starts')
+
+        if self.verbose:
+            print(starts)
+
         for key in starts:
             self.do_entry(key)
 
     def do_entry(self, key: str, level=0) -> None:
         indent = '  ' * level
+        if self.verbose:
+            print(f'{indent}[{key}]')
 
         # if exists ?
         entry = self.toml.get(key)
         if not entry:
-            raise KeyError(f'{key}: {self.toml}')
+            raise KeyError(f'{key} not in {self.toml.keys()}')
 
         # depends
         depends = entry.get('depends')
@@ -48,7 +54,6 @@ class Duck:
 
         # do
         if self.verbose:
-            print(f'{indent}[{key}]')
             print(f'{indent}{entry}')
 
         cwd = entry.get('cwd')

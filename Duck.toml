@@ -2,7 +2,7 @@
 
 # global options
 @verbose = true
-@default = "hello"
+@default = "run"
 
 # entries
 [chcd]
@@ -16,7 +16,7 @@ command = ["rmdir", "tmp"]
 [duck]
 command = ["echo", "🐣🐣🐣"]
 
-[hello]
+[run]
 depends = ["duck", "rmdir"]
 command = ["echo", "hello 🦆"]
 
