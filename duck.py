@@ -108,17 +108,16 @@ class Duck:
                 sys.exit(1)
 
 
-ROOT = pathlib.Path('/')
-
-
-def find_toml(current: pathlib.Path) -> Optional[pathlib.Path]:
+def find_toml(current: pathlib.Path, verbose: bool) -> Optional[pathlib.Path]:
 
     while True:
+        if verbose:
+            print(current)
         duck_file = current / 'Duck.toml'
         if duck_file.exists():
             return duck_file
 
-        if current == ROOT:
+        if current == current.parent:
             print('Duck.toml not found')
             return None
         current = current.parent
@@ -138,7 +137,7 @@ def main():
 
     # find Duck.toml
     here = pathlib.Path('.').resolve()
-    duck_file = find_toml(here)
+    duck_file = find_toml(here, args.verbose)
     if not duck_file:
         return
 
