@@ -1,8 +1,7 @@
-import sys
 import subprocess
 import pathlib
 import argparse
-from typing import MutableMapping, Any, List
+from typing import List
 import toml
 
 VERSION = [0, 1]
