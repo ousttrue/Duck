@@ -35,8 +35,6 @@ class Duck:
         if not starts:
             if len(self.toml) == 1:
                 starts = [k for k in self.toml.keys() if not k.startswith('@')]
-            elif '@default' in self.toml:
-                starts = [self.toml['@default']]
             else:
                 raise RuntimeError('no starts')
 

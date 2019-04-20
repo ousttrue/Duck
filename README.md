@@ -6,8 +6,6 @@ A simple tool like make using TOML 🦆
 Duck.toml
 
 ```toml
-@default = "hello"
-
 # entries
 [duck]
 command = ["echo", "🐣🐣🐣"]
@@ -18,14 +16,14 @@ command = ["echo", "hello 🦆"]
 ```
 
 ```
-$ duck
+$ duck hello
 🐣🐣🐣
 hello 🦆
 ```
 
-```toml
-@default = "build"
+## cmake
 
+```toml
 [generate]
 cwd = "build"
 command = ["cmake", ".."]
