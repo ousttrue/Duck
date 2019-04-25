@@ -50,17 +50,19 @@ class Duck:
             command[0] = 'cmake'
 
     def start(self, starts: List[str]) -> None:
-        if not starts:
-            if len(self.toml) == 1:
-                starts = [k for k in self.toml.keys() if not k.startswith('@')]
-            else:
-                raise RuntimeError('no starts')
-
         if self.verbose:
             print(starts)
 
         for key in starts:
             self.do_entry(key)
+
+    def print_entries(self):
+        if not self.toml:
+            return
+
+        print('[entries]')
+        for k, v in self.toml.items():
+            print(k)
 
     def do_entry(self, key: str, level=0) -> None:
         indent = '  ' * level
@@ -142,6 +144,13 @@ def main():
         return
 
     duck = Duck(duck_file, args.verbose, platform.system().lower())
+
+    if not args.starts:
+        parser.print_help()
+        print()
+        duck.print_entries()
+        sys.exit()
+
     duck.start(args.starts)
 
 
