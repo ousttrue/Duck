@@ -1,4 +1,8 @@
+import sys
 import argparse
+import pathlib
+
+HERE = pathlib.Path(__file__).resolve().parent
 
 VERSION = [0, 1]
 
@@ -8,14 +12,20 @@ def main():
 
     sub = parser.add_subparsers(title='action')
 
-    wrap = sub.add_parser('wrap')
-    wrap.set_defaults(action='wrap')
-    wrap.add_argument('cmd', type=str, nargs='+', help='''cmd and arguments''')
+    wrap_parser = sub.add_parser('wrap')
+    wrap_parser.set_defaults(action='wrap')
+    if __name__ == '__main__':
+        sys.path.append(str(HERE))
+        import wrap
+    else:
+        # as module
+        from . import wrap
+    wrap.setup_parser(wrap_parser)
 
     args = parser.parse_args()
 
     if args.action == 'wrap':
-        print(args.cmd)
+        wrap.execute(args.cmd)
     else:
         raise ValueError(args.action)
 
