@@ -7,7 +7,6 @@ from typing import List, Any, Optional
 import toml
 
 
-
 def find_windows_cmake() -> Optional[pathlib.Path]:
     cmake = pathlib.Path("C:/Program Files/CMake/bin/cmake.exe")
     if cmake.exists():

@@ -25,7 +25,7 @@ def main():
     args = parser.parse_args()
 
     if args.action == 'wrap':
-        wrap.execute(args.cmd)
+        wrap.execute(args)
     else:
         raise ValueError(args.action)
 
