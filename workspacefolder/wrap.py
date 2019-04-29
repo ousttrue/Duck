@@ -50,7 +50,7 @@ class Logger:
         else:
             #sys.stderr.write(f'body {len(self.buffer)}/{self.content_length}\n')
             # body
-            if len(self.buffer) >= self.content_length:
+            if len(self.buffer) == self.content_length:
                 self.f.write(self.prefix)
                 self.f.write(self.buffer)
                 self.f.write(b'\n')
@@ -58,6 +58,7 @@ class Logger:
                 self.buffer.clear()
                 self.headers.clear()
                 self.content_length = 0
+                return True
 
 
 async def stdin_to_childstdin(w: asyncio.StreamWriter, pool, logger):
@@ -70,7 +71,8 @@ async def stdin_to_childstdin(w: asyncio.StreamWriter, pool, logger):
             break
 
         w.write(b)
-        logger.write(b)
+        if logger.write(b):
+            await w.drain()
 
 
 async def process_child_stdout(c: asyncio.StreamReader, logger):
@@ -82,7 +84,8 @@ async def process_child_stdout(c: asyncio.StreamReader, logger):
 
         # sync
         sys.stdout.buffer.write(b)
-        logger.write(b)
+        if logger.write(b):
+            w.stdout.buffer.flush()
 
 
 async def process_child_stderr(c: asyncio.StreamReader, log):
@@ -92,7 +95,7 @@ async def process_child_stderr(c: asyncio.StreamReader, log):
             log.write(b'stderr break\n')
             break
         # sync
-        #sys.stdout.buffer.write(b)
+        sys.stderr.buffer.write(b)
 
         log.write(b'EE->')
         log.write(b)
