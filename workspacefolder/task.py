@@ -6,7 +6,6 @@ import argparse
 from typing import List, Any, Optional
 import toml
 
-VERSION = [0, 1]
 
 
 def find_windows_cmake() -> Optional[pathlib.Path]:
