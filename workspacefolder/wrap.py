@@ -4,30 +4,10 @@ import subprocess
 from typing import List
 
 if sys.platform == "win32":
+    # for asyncio.create_subprocess_exec
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-
-class Launcher:
-    def __init__(self, cmd, *args):
-        self.cmd = cmd
-        self.args = args
-        self.p = None
-        self.ret = None
-
-    async def __aenter__(self):
-        # create process
-        self.p = await asyncio.create_subprocess_exec(self.cmd,
-                                                      *self.args,
-                                                      stdout=subprocess.PIPE,
-                                                      stderr=subprocess.PIPE,
-                                                      stdin=subprocess.PIPE)
-        return self.p
-
-    async def __aexit__(self, exc_type, exc, tb):
-        # wait until process terminated
-        self.ret = await self.p.wait()
 
 
 class Win32StdinReader:
@@ -39,7 +19,8 @@ class Win32StdinReader:
         return await self.loop.run_in_executor(None, self.stdin.readline)
 
     async def read(self, n):
-        return await self.loop.run_in_executor(None, lambda: self.stdin.read(n))
+        return await self.loop.run_in_executor(
+            None, lambda: self.stdin.read(n))
 
 
 async def stdin_to_childstdin(w: asyncio.StreamWriter):
@@ -52,7 +33,7 @@ async def stdin_to_childstdin(w: asyncio.StreamWriter):
                                      sys.stdin)  # sets read_transport
 
     while True:
-        b = await r.read(1)
+        b = await r.readline()
         if not b:
             break
         w.write(b)
@@ -68,11 +49,18 @@ async def childstdout_to_stdout(c: asyncio.StreamReader):
 
 
 async def launch(cmd: str, args: List[str]):
-    async with Launcher(cmd, *args) as p:
-        asyncio.create_task(stdin_to_childstdin(p.stdin))
-        asyncio.create_task(childstdout_to_stdout(p.stderr))
-        await childstdout_to_stdout(p.stdout)
-        p.stdin.close()
+    # create process
+    p = await asyncio.create_subprocess_exec(cmd,
+                                             *args,
+                                             stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE,
+                                             stdin=subprocess.PIPE)
+    asyncio.create_task(stdin_to_childstdin(p.stdin))
+    asyncio.create_task(childstdout_to_stdout(p.stderr))
+    asyncio.create_task(childstdout_to_stdout(p.stdout))
+    ret = await p.wait()
+    print(ret)
+    sys.exit(ret)
 
 
 def setup_parser(parser) -> None:
