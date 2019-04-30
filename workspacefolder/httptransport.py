@@ -3,14 +3,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def remove_utf8_bom(src: bytes) -> bytes:
-    '''
-    test for powershell
-    '''
-    if len(src) >= 3 and src[0:3] == b'\xEF\xBB\xBF':
-        return src[3:]
-    else:
-        return src
+# def remove_utf8_bom(src: bytes) -> bytes:
+#     '''
+#     test for powershell
+#     '''
+#     if len(src) >= 3 and src[0:3] == b'\xEF\xBB\xBF':
+#         return src[3:]
+#     else:
+#         return src
 
 
 def get_line(src: bytearray) -> Optional[bytes]:
@@ -18,6 +18,7 @@ def get_line(src: bytearray) -> Optional[bytes]:
         # CRLF
         if src[-2] == 13 and src[-1] == 10:
             return bytes(src[:-2])
+    return None
 
 
 class HttpTransport:
@@ -34,8 +35,8 @@ class HttpTransport:
     def append_callback(self, cb) -> None:
         self.on_msg_callbacks.append(cb)
 
-    def push(self, b: bytes) -> None:
-        self.buffer += b
+    def push(self, b: int) -> None:
+        self.buffer.append(b)
         if self.content_length == 0:
             # header
             line = get_line(self.buffer)
@@ -50,7 +51,7 @@ class HttpTransport:
                             break
                 else:
                     # add header
-                    self.headers.append(remove_utf8_bom(line))
+                    self.headers.append(line)
 
         else:
             # body
@@ -87,8 +88,8 @@ if __name__ == "__main__":
                 b'{}',
             ]
             for line in http:
-                for i in range(len(line)):
-                    ht.push(line[i:i + 1])
+                for b in line:
+                    ht.push(b)
 
             self.assertTrue(self.success)
 
