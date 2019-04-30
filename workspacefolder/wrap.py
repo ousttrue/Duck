@@ -129,8 +129,14 @@ def setup_parser(parser) -> None:
 
 
 def execute(parsed):
-    logfile = pathlib.Path(parsed.logfile)
-
-    with logfile.open('wb') as log:
+    def run(log):
         log.write(f'{parsed.cmd} {parsed.args}\n'.encode('utf-8'))
         asyncio.run(launch(parsed.cmd, parsed.args, log))
+
+    if parsed.logfile:
+        logfile = pathlib.Path(parsed.logfile)
+        with logfile.open('wb') as log:
+            run(log)
+    else:
+        run(sys.stderr.buffer)
+
