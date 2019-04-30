@@ -21,7 +21,7 @@ def get_line(src: bytearray) -> Optional[bytes]:
     return None
 
 
-class HttpTransport:
+class HttpSplitter:
     '''
     split keep-alive http stream to http messages
     '''
@@ -72,9 +72,9 @@ if __name__ == "__main__":
 
     import unittest
 
-    class HttpTransportTest(unittest.TestCase):
-        def test_http_transport(self):
-            ht = HttpTransport()
+    class HttpSplitterTest(unittest.TestCase):
+        def test_http_splitter(self):
+            ht = HttpSplitter()
             self.success = False
 
             def callback(h, b):
