@@ -41,14 +41,13 @@ https://microsoft.github.io/language-server-protocol/
 
 ### WorkspaceFolderの確定
 
-* 設定ファイルは Workspace.toml。
-* 無くても親フォルダを遡りながらWorkspaceFolderを確定させる。
-* .git, .vscode, package.json, Makefile, dub.json, setup.py等の探索。
+* 🔨 設定ファイルは Workspace.toml。
+* 🔨 無くても親フォルダを遡りながらWorkspaceFolderを確定させる。
+* 🔨 .git, .vscode, package.json, Makefile, dub.json, setup.py等の探索。
 
-### vim plugin と 単体実行
+### vim plugin から RPCモードで起動する
 
-* 🔨 job経由で `python wf job` として起動する
-* 🔨 ログビューワー
+* 🔨 vimのjob経由で `python wf rpc` として起動する。標準入出力経由の、RPCモードになる。
 
 ## コマンドライン
 
@@ -56,26 +55,34 @@ subcommands
 
 ### 🔨 wrap
 
-⭕️ 他のコマンドをラップする。lsp, dap のデバッグ用。 例えば、vim-lsp が pyls を起動するのに割り込む。
+* ⭕️ 他のコマンドをラップする。lsp, dap のデバッグ用。 例えば、vim-lsp が pyls を起動するのに割り込む。
 
 `$ wf wrap --logfile log.txt pyls`
 
-🔨 引数無しで指定のexeを起動する方法
+* 🔨 引数無しで指定のexeを起動する方法
 
 #### 🔨 --logfile=file
 
-⭕️ ロギングしてデバッグの助けにする。
-⭕️ http splitter
-🔨 LSP表示(JSON-RPC)
-🔨 DAP表示
+* ⭕️ ロギングしてデバッグの助けにする。
+* ⭕️ http splitter
+* 🔨 LSP表示(JSON-RPC)
+* 🔨 DAP表示
 
-### job
+### rpc
 
-vimのjob経由で起動するモード。
-標準入出力から制御する。JSON-RPC。
+* 🔨 vimのjob経由で起動するモード。
+* 🔨 標準入出力から接続する。
+* 🔨 HTTP内に埋め込んだJSON-RPC。
 
 ### task
 
-Workspace.toml に記述されたtaskを実行する。
-実行時の cwd を調整する。
+* Workspace.toml に記述されたtaskを実行する。
+* 実行時の cwd を調整する。
+* 🔨 Workspace.toml に引数無し実行の記述を作る。
+
+## vimplugin
+
+* ⭕️ job で起動する
+* 🔨 transportは、 `LSP` と同じ `HTTP-keepalive` 的なストリーム
+* 🔨 protocolは、 `JSON-RPC`
 
