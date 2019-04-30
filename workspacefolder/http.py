@@ -55,6 +55,21 @@ class HttpSplitter:
                 self.content_length = 0
 
 
+def split(src: bytes):
+    logger.debug(src)
+    results = []
+    splitter = HttpSplitter()
+
+    def callback(h, b):
+        results.append((h, b))
+
+    splitter.append_callback(callback)
+    for b in src:
+        splitter.push(b)
+    for result in results:
+        yield result
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
