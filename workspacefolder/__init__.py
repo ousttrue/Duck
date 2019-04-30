@@ -1,6 +1,11 @@
-import sys
 import argparse
 import pathlib
+import asyncio
+import logging
+from . import rpc
+
+# logging.lastResort = logging.NullHandler()
+logger = logging.getLogger(__name__)
 
 HERE = pathlib.Path(__file__).resolve().parent
 
@@ -8,26 +13,33 @@ VERSION = [0, 1]
 
 
 def main():
+    # setup logger
+    logging.basicConfig(
+        level=logging.DEBUG,
+        datefmt='%H:%M:%S',
+        format='%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s')
+
+    # parser setup
     parser = argparse.ArgumentParser(description='WorkspaceFolder tool.')
-
-    sub = parser.add_subparsers(title='action')
-
-    wrap_parser = sub.add_parser('wrap')
-    wrap_parser.set_defaults(action='wrap')
-    if __name__ == '__main__':
-        sys.path.append(str(HERE))
-        import wrap
-    else:
-        # as module
-        from . import wrap
-    wrap.setup_parser(wrap_parser)
-
+    parser.add_argument('--logfile', type=str, help='''cmd logfile''')
+    parser.add_argument('--rpc',
+                        action='store_true',
+                        help='''enable rpc in stdinout''')
     args = parser.parse_args()
 
-    if args.action == 'wrap':
-        wrap.execute(args)
+    #
+    # start
+    #
+    if args.rpc:
+        # start stdin reader
+        dispatcher = rpc.Dispatcher()
+
+        # block until stdin break
+        asyncio.run(dispatcher.start_stdin_reader())
+
     else:
-        raise ValueError(args.action)
+        # execute tasks
+        pass
 
 
 if __name__ == '__main__':

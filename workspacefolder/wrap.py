@@ -122,12 +122,6 @@ async def launch(cmd: str, args: List[str], log):
         sys.exit(ret)
 
 
-def setup_parser(parser) -> None:
-    parser.add_argument('--logfile', type=str, help='''cmd logfile''')
-    parser.add_argument('cmd', type=str, help='''cmd''')
-    parser.add_argument('args', type=str, nargs='*', help='''cmd arguments''')
-
-
 def execute(parsed):
     def run(log):
         log.write(f'{parsed.cmd} {parsed.args}\n'.encode('utf-8'))
