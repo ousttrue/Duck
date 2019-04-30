@@ -3,16 +3,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# def remove_utf8_bom(src: bytes) -> bytes:
-#     '''
-#     test for powershell
-#     '''
-#     if len(src) >= 3 and src[0:3] == b'\xEF\xBB\xBF':
-#         return src[3:]
-#     else:
-#         return src
-
-
 def get_line(src: bytearray) -> Optional[bytes]:
     if len(src) >= 2:
         # CRLF
@@ -37,6 +27,7 @@ class HttpSplitter:
 
     def push(self, b: int) -> None:
         self.buffer.append(b)
+        # logger.debug(self.buffer)
         if self.content_length == 0:
             # header
             line = get_line(self.buffer)

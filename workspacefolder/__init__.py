@@ -1,3 +1,4 @@
+import sys
 import argparse
 import pathlib
 import asyncio
@@ -31,11 +32,12 @@ def main():
     # start
     #
     if args.rpc:
+        logger.debug('rpc')
         # start stdin reader
         dispatcher = rpc.Dispatcher()
 
         # block until stdin break
-        asyncio.run(dispatcher.start_stdin_reader())
+        asyncio.run(dispatcher.start_stdin_reader(sys.stdin.buffer))
 
     else:
         # execute tasks
