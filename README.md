@@ -47,22 +47,27 @@ https://microsoft.github.io/language-server-protocol/
 
 ### vim plugin と 単体実行
 
-* vim plugin から job で DAP と LSP の実行を代行させる(vimscriptよくわからん)。
-* コマンドラインからの単体実行(ややこしいところは `python3` で解決)。
-* DAP, LSP のセッションのロギングとか。
+* 🔨 job経由で `python wf job` として起動する
+* 🔨 ログビューワー
 
 ## コマンドライン
 
 subcommands
 
-### wrap
+### 🔨 wrap
 
-他のコマンドをラップする。lsp, dap のデバッグ用。
-例えば、vim-lsp が pyls を起動するのに割り込む。
+⭕️ 他のコマンドをラップする。lsp, dap のデバッグ用。 例えば、vim-lsp が pyls を起動するのに割り込む。
 
-#### --logfile=file
+`$ wf wrap --logfile log.txt pyls`
 
-ロギングしてデバッグの助けにする。
+🔨 引数無しで指定のexeを起動する方法
+
+#### 🔨 --logfile=file
+
+⭕️ ロギングしてデバッグの助けにする。
+⭕️ http splitter
+🔨 LSP表示(JSON-RPC)
+🔨 DAP表示
 
 ### job
 
@@ -72,10 +77,5 @@ vimのjob経由で起動するモード。
 ### task
 
 Workspace.toml に記述されたtaskを実行する。
-実行時の cwd を調整する。
-
-### run
-
-他のコマンドを実行する。
 実行時の cwd を調整する。
 
