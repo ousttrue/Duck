@@ -34,10 +34,11 @@ def main():
     if args.rpc:
         logger.debug('rpc')
         # start stdin reader
-        dispatcher = rpc.Dispatcher()
+        dispatcher = rpc.RpcDispatcher()
 
         # block until stdin break
-        asyncio.run(dispatcher.start_stdin_reader(sys.stdin.buffer))
+        asyncio.run(
+            dispatcher.start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer))
 
     else:
         # execute tasks
