@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, Iterable, NamedTuple, Callable
 import logging
 logger = logging.getLogger(__name__)
 
@@ -11,18 +11,23 @@ def get_line(src: bytearray) -> Optional[bytes]:
     return None
 
 
+class HttpRequest(NamedTuple):
+    headers: List[bytes]
+    body: bytes
+
+
 class HttpSplitter:
     '''
     split keep-alive http stream to http messages
     '''
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.buffer = bytearray()
         self.content_length = 0
-        self.headers = []
-        self.on_msg_callbacks = []
+        self.headers: List[bytes] = []
+        self.on_msg_callbacks: List[Callable[[HttpRequest], None]] = []
 
-    def append_callback(self, cb) -> None:
+    def append_callback(self, cb: Callable[[HttpRequest], None]) -> None:
         self.on_msg_callbacks.append(cb)
 
     def push(self, b: int) -> None:
@@ -49,19 +54,19 @@ class HttpSplitter:
             if len(self.buffer) == self.content_length:
                 body = bytes(self.buffer)
                 for cb in self.on_msg_callbacks:
-                    cb(self.headers, body)
+                    cb(HttpRequest(self.headers, body))
                 self.buffer.clear()
                 self.headers.clear()
                 self.content_length = 0
 
 
-def split(src: bytes):
+def split(src: bytes) -> Iterable[HttpRequest]:
     logger.debug(src)
     results = []
     splitter = HttpSplitter()
 
-    def callback(h, b):
-        results.append((h, b))
+    def callback(req: HttpRequest) -> None:
+        results.append(req)
 
     splitter.append_callback(callback)
     for b in src:
@@ -83,7 +88,7 @@ if __name__ == "__main__":
             ht = HttpSplitter()
             self.success = False
 
-            def callback(h, b):
+            def callback(req: HttpRequest) -> None:
                 self.success = True
 
             ht.append_callback(callback)

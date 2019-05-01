@@ -59,7 +59,7 @@ def to_rpc(
 
 
 class RpcDispatcher:
-    def __init__(self):
+    def __init__(self) -> None:
         self.splitter = http.HttpSplitter()
         self.splitter.append_callback(self.on_http)
         self.method_map: Dict[str, Any] = {}
@@ -67,9 +67,9 @@ class RpcDispatcher:
     def register(self, name: bytes, callback) -> None:
         self.method_map[name] = callback
 
-    def on_http(self, headers: List[bytes], body: bytes):
-        logger.debug(body)
-        message = to_rpc(body)
+    def on_http(self, request: http.HttpRequest) -> None:
+        logger.debug(request.body)
+        message = to_rpc(request.body)
         logger.debug(message)
 
         if isinstance(message, JsonRPCRequest):
