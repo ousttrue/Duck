@@ -48,19 +48,27 @@ class Dispatcher:
                 if name:
                     self.register(name, m)
 
-    def _create_request(self, method, *args):
+    def _create_request(self, method, *args, **kw):
+        params = None
+        if args and kw:
+            raise ValueError()
+        elif args:
+            params = args
+        elif kw:
+            params = kw
+
         request_id = self.next_request_id
         self.next_request_id += 1
         request = {
             'jsonrpc': '2.0',
             'method': method,
-            'params': args,
+            'params': params,
             'id': request_id,
         }
         return request
 
-    def async_request(self, w, method, *args) -> asyncio.Future:
-        request = self._create_request(method, *args)
+    def async_request(self, w, method, *args, **kw) -> asyncio.Future:
+        request = self._create_request(method, *args, **kw)
 
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
@@ -80,9 +88,7 @@ class Dispatcher:
             * エラーメッセージがある場合
         結果を返す。
         '''
-        #logger.debug(body)
         message = json_rpc.parse(body)
-        #logger.debug(message)
 
         if isinstance(message, json_rpc.JsonRPCRequest):
             callback = self.method_map.get(message.method)
@@ -117,21 +123,30 @@ class Dispatcher:
                 raise ValueError('params not dict or list')
 
         elif isinstance(message, json_rpc.JsonRPCResponse):
-            raise NotImplementedError()
+            self.dispatch_response(message)
 
         elif isinstance(message, json_rpc.JsonRPCError):
-            self.dispatch_jsonerrror(message)
+            self.dispatch_errror(message)
 
         else:
             raise ValueError()
 
         return None
 
-    def dispatch_jsonerrror(self, err: json_rpc.JsonRPCError):
-        if err.id:
-            fut = self.request_map.get(err.id)
+    def dispatch_response(self, res: json_rpc.JsonRPCResponse):
+        request_id = res.id
+        if request_id:
+            fut = self.request_map.get(request_id)
             if fut:
-                fut.set_result(err)
+                fut.set_result(res.result)
+                return
+        logger.error(res)
+
+    def dispatch_errror(self, err: json_rpc.JsonRPCError):
+        request_id = err.id
+        if request_id:
+            fut = self.request_map.get(request_id)
+            if fut:
+                fut.set_result(err.error)
                 return
         logger.error(err)
-

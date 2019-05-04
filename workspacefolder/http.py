@@ -1,4 +1,4 @@
-from typing import Optional, List, Iterable, NamedTuple, Callable
+from typing import Optional, List, Iterable, NamedTuple
 import logging
 logger = logging.getLogger(__name__)
 
