@@ -25,12 +25,8 @@ class HttpSplitter:
         self.buffer = bytearray()
         self.content_length = 0
         self.headers: List[bytes] = []
-        self.on_msg_callbacks: List[Callable[[HttpRequest], None]] = []
 
-    def append_callback(self, cb: Callable[[HttpRequest], None]) -> None:
-        self.on_msg_callbacks.append(cb)
-
-    def push(self, b: int) -> None:
+    def push(self, b: int) -> Optional[HttpRequest]:
         self.buffer.append(b)
         # logger.debug(self.buffer)
         if self.content_length == 0:
@@ -53,28 +49,29 @@ class HttpSplitter:
             # body
             if len(self.buffer) == self.content_length:
                 body = bytes(self.buffer)
-                for cb in self.on_msg_callbacks:
-                    cb(HttpRequest(self.headers, body))
+
+                request = HttpRequest(self.headers, body)
+
                 self.buffer.clear()
                 self.headers.clear()
                 self.content_length = 0
 
+                return request
+
+        return None
+
 
 def split(src: bytes) -> Iterable[HttpRequest]:
     logger.debug(src)
-    results = []
     splitter = HttpSplitter()
 
-    def callback(req: HttpRequest) -> None:
-        results.append(req)
-
-    splitter.append_callback(callback)
     for b in src:
-        splitter.push(b)
-    for result in results:
-        yield result
+        result = splitter.push(b)
+        if result:
+            yield result
 
 
+# {{{
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
@@ -86,22 +83,18 @@ if __name__ == "__main__":
     class HttpSplitterTest(unittest.TestCase):
         def test_http_splitter(self):
             ht = HttpSplitter()
-            self.success = False
-
-            def callback(req: HttpRequest) -> None:
-                self.success = True
-
-            ht.append_callback(callback)
 
             http = [
                 b'Content-Length: 2\r\n'
                 b'\r\n',
                 b'{}',
             ]
+
             for line in http:
                 for b in line:
-                    ht.push(b)
+                    request = ht.push(b)
 
-            self.assertTrue(self.success)
+            self.assertTrue(request is not None)
 
     unittest.main()
+# }}}

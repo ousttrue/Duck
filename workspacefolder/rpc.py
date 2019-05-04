@@ -13,19 +13,11 @@ BOM = b'\xef\xbb\xbf'
 async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     splitter = http.HttpSplitter()
 
-    def on_http(request: http.HttpRequest):
-        body = dispatcher.dispatch_jsonrpc(request.body)
-        if body:
-            w.write(b'Content-Length: ')
-            w.write(str(len(body)).encode('ascii'))
-            w.write(b'\r\n\r\n')
-            w.write(body)
-
-    splitter.append_callback(on_http)
-
     loop = asyncio.get_event_loop()
     bom_check: Optional[bytearray] = bytearray()
     while True:
+        # async read a byte.
+        # use threadpool executor for stdin of Windows
         read_byte: bytes = await loop.run_in_executor(None, r.read, 1)
         if not read_byte:
             logger.debug('stdin break')
@@ -33,7 +25,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
         b = read_byte[0]
 
         if bom_check is not None:
-            # for powershell pipe
+            # fix BOM from powershell pipe
             bom_check.append(b)
             if len(bom_check) == 3:
                 if bytes(bom_check) != BOM:
@@ -42,7 +34,14 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
                 bom_check = None
 
         else:
-            splitter.push(b)
+            request = splitter.push(b)
+            if request:
+                body = dispatcher.dispatch_jsonrpc(request.body)
+                if body:
+                    w.write(b'Content-Length: ')
+                    w.write(str(len(body)).encode('ascii'))
+                    w.write(b'\r\n\r\n')
+                    w.write(body)
 
 
 def execute(parsed):
@@ -53,7 +52,7 @@ def execute(parsed):
 
     # block until stdin break
     asyncio.run(
-        d.start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer, d))
+        start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer, d))
 
 
 # {{{
