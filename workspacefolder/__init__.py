@@ -1,7 +1,7 @@
 import argparse
 import pathlib
 import logging
-from . import rpc
+from workspacefolder import rpc
 
 # logging.lastResort = logging.NullHandler()
 logger = logging.getLogger(__name__)

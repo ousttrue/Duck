@@ -1,6 +1,5 @@
 import pathlib
 import sys
-import os
 import asyncio
 import concurrent.futures
 import subprocess

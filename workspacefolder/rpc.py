@@ -4,10 +4,7 @@ import json
 import io
 import logging
 from typing import BinaryIO, Dict, Any, NamedTuple, Union
-if __name__ == '__main__':
-    import http
-else:
-    from . import http
+from workspacefolder import http
 logger = logging.getLogger(__name__)
 
 BOM = b'\xef\xbb\xbf'
