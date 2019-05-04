@@ -3,29 +3,33 @@ import sys
 import asyncio
 import subprocess
 import logging
-from typing import Union
+from typing import Union, BinaryIO
 from workspacefolder import dispatcher, http, json_rpc
 logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
     # for asyncio.create_subprocess_exec
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    #asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
-async def process_child_stdout(c: asyncio.StreamReader, push):
+async def process_child_stdout(c: BinaryIO, push):
+    loop = asyncio.get_running_loop()
+
     while True:
-        b = await c.read(1)
+        b = await loop.run_in_executor(None, c.read, 1)
         if not b:
             logger.debug(b'stdout break\n')
             break
         push(b[0])
 
 
-async def process_child_stderr(c: asyncio.StreamReader):
+async def process_child_stderr(c: BinaryIO):
+    loop = asyncio.get_running_loop()
+
     while True:
-        line = await c.readline()
+        line = await loop.run_in_executor(None, c.readline)
         if not line:
             logger.debug(b'stderr break\n')
             break
@@ -39,6 +43,12 @@ class Pyls:
         self.splitter = http.HttpSplitter()
         self.dispatcher = dispatcher.Dispatcher()
 
+    def terminate(self):
+        self.p.stdin.close()
+        self.p.stdout.close()
+        self.p.stderr.close()
+        #self.p.terminate()
+
     def send_request(self, request: bytes):
         logger.debug(request)
         header = f'Content-Length: {len(request)}\r\n\r\n'
@@ -46,14 +56,12 @@ class Pyls:
         self.p.stdin.write(request)
 
     async def async_launch(self, rootUri: pathlib.Path):
-        logger.debug("async_launch")
         # create process
-        self.p = await asyncio.create_subprocess_exec(self.cmd,
-                                                      *self.args,
-                                                      stdout=subprocess.PIPE,
-                                                      stderr=subprocess.PIPE,
-                                                      stdin=subprocess.PIPE)
-        logger.debug('create process: %s', self.cmd)
+        self.p = subprocess.Popen([self.cmd] + self.args,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  stdin=subprocess.PIPE)
+        #logger.debug('create process: %s', self.cmd)
 
         # start pipe reader
         if self.p.stderr:
@@ -64,10 +72,10 @@ class Pyls:
         result = await self.async_initialize(rootUri)
         logger.debug(result)
 
-    async def async_initialize(self, rootUri: pathlib.Path) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
-        params = {
-                'rootUrih': str(rootUri)
-                }
+    async def async_initialize(
+            self, rootUri: pathlib.Path
+    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
+        params = {'rootUrih': str(rootUri)}
         return await self.dispatcher.async_request(self.p.stdin, 'initialize',
                                                    **params)
 
@@ -108,7 +116,7 @@ if __name__ == '__main__':
 
     async def run():
         await lsm.async_document_open(pathlib.Path(__file__))
-        await lsm.pyls.p.wait()
+        lsm.pyls.terminate()
 
     asyncio.run(run())
 # }}}
