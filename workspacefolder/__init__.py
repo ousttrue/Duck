@@ -1,7 +1,5 @@
-import sys
 import argparse
 import pathlib
-import asyncio
 import logging
 from . import rpc
 
@@ -14,11 +12,6 @@ VERSION = [0, 1]
 
 
 def main():
-    # setup logger
-    logging.basicConfig(
-        level=logging.DEBUG,
-        datefmt='%H:%M:%S',
-        format='%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s')
 
     # parser setup
     parser = argparse.ArgumentParser(description='WorkspaceFolder tool.')
@@ -26,7 +19,17 @@ def main():
     parser.add_argument('--rpc',
                         action='store_true',
                         help='''enable rpc in stdinout''')
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help='''enable debug switch''')
     args = parser.parse_args()
+
+    if args.debug:
+        f = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
+        logging.basicConfig(level=logging.DEBUG, datefmt='%H:%M:%S', format=f)
+    else:
+        # no output
+        logging.lastResort = logging.NullHandler()
 
     #
     # start
@@ -34,12 +37,7 @@ def main():
     if args.rpc:
         logger.debug('rpc')
         # start stdin reader
-        dispatcher = rpc.RpcDispatcher()
-
-        # block until stdin break
-        asyncio.run(
-            dispatcher.start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer))
-
+        rpc.execute(args)
     else:
         # execute tasks
         pass

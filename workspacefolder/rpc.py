@@ -1,8 +1,9 @@
 import asyncio
+import sys
 import json
 import io
 import logging
-from typing import BinaryIO, List, Dict, Any, NamedTuple, Union
+from typing import BinaryIO, Dict, Any, NamedTuple, Union
 if __name__ == '__main__':
     import http
 else:
@@ -66,6 +67,19 @@ class RpcDispatcher:
 
     def register(self, name: bytes, callback) -> None:
         self.method_map[name] = callback
+
+    def register_dbug_methods(self) -> None:
+        # hello
+        def hello(target: str):
+            return 'hello ' + target
+
+        self.register('hello', hello)
+
+        # add
+        def add(a, b):
+            return a + b
+
+        self.register('add', add)
 
     def on_http(self, request: http.HttpRequest) -> None:
         logger.debug(request.body)
@@ -136,6 +150,17 @@ class RpcDispatcher:
                 self.splitter.push(b[0])
 
 
+def execute(parsed):
+    dispatcher = RpcDispatcher()
+
+    if parsed.debug:
+        dispatcher.register_dbug_methods()
+
+    # block until stdin break
+    asyncio.run(
+        dispatcher.start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer))
+
+
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.DEBUG,
@@ -174,17 +199,7 @@ if __name__ == '__main__':
             w = io.BytesIO()
             d = RpcDispatcher()
 
-            # hello
-            def hello(target: str):
-                return 'hello ' + target
-
-            d.register('hello', hello)
-
-            # add
-            def add(a, b):
-                return a + b
-
-            d.register('add', add)
+            d.register_dbug_methods()
 
             asyncio.run(d.start_stdin_reader(r, w))
 
