@@ -3,7 +3,7 @@ import sys
 import json
 import io
 import logging
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 from workspacefolder import http, dispatcher, json_rpc
 logger = logging.getLogger(__name__)
 
@@ -15,10 +15,10 @@ class Pyls:
         pass
 
     async def async_launch(self):
-        pass
+        logger.debug("async_launch")
 
     async def async_open(self, path) -> None:
-        pass
+        logger.debug(path)
 
 
 class LanguageServerManager:

@@ -51,9 +51,9 @@ class Dispatcher:
             * エラーメッセージがある場合
         結果を返す。
         '''
-        logger.debug(body)
+        #logger.debug(body)
         message = json_rpc.parse(body)
-        logger.debug(message)
+        #logger.debug(message)
 
         if isinstance(message, json_rpc.JsonRPCRequest):
             callback = self.method_map.get(message.method)
@@ -72,7 +72,20 @@ class Dispatcher:
                 raise ValueError('params not dict or list')
 
         elif isinstance(message, json_rpc.JsonRPCNotify):
-            raise NotImplementedError()
+            callback = self.method_map.get(message.method)
+            if not callback:
+                raise ValueError(f'{message.method} not found')
+
+            if isinstance(message.params, dict):
+                result = callback(**message.params)
+                #return json_rpc.to_bytes(message.id, result)
+
+            elif isinstance(message.params, list):
+                result = callback(*message.params)
+                #return json_rpc.to_bytes(message.id, result)
+
+            else:
+                raise ValueError('params not dict or list')
 
         elif isinstance(message, json_rpc.JsonRPCResponse):
             raise NotImplementedError()
@@ -82,3 +95,5 @@ class Dispatcher:
 
         else:
             raise ValueError()
+
+        return None
