@@ -7,8 +7,6 @@ from typing import BinaryIO
 from workspacefolder import http, dispatcher, json_rpc, lsp
 logger = logging.getLogger(__name__)
 
-BOM = b'\xef\xbb\xbf'
-
 
 async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     splitter = http.HttpSplitter()
@@ -22,7 +20,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     if not bom_check:
         logger.debug('stdin break')
         return
-    if bom_check != BOM:
+    if bom_check != b'\xef\xbb\xbf':  # BOM
         for b in bom_check:
             splitter.push(b)
 
