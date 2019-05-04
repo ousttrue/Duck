@@ -1,4 +1,5 @@
 from typing import Dict, Any, Optional
+import json
 
 import logging
 from workspacefolder import json_rpc
@@ -28,6 +29,7 @@ def rpc_method(func, name: str = None):
 class Dispatcher:
     def __init__(self):
         self.method_map: Dict[str, Any] = {}
+        self.next_request_id = 1
 
     def register(self, name: str, callback) -> None:
         self.method_map[name] = callback
@@ -43,6 +45,18 @@ class Dispatcher:
                 name = getattr(m, RPC_KEY)
                 if name:
                     self.register(name, m)
+
+    def create_request(self, method, *args) -> bytes:
+        request_id = self.next_request_id
+        self.next_request_id += 1
+        request = {
+            'jsonrpc': '2.0',
+            'method': method,
+            'id': request_id,
+            'params': args,
+        }
+        json_request = json.dumps(request)
+        return json_request.encode('utf-8')
 
     def dispatch_jsonrpc(self, body: bytes) -> Optional[bytes]:
         '''
@@ -91,7 +105,7 @@ class Dispatcher:
             raise NotImplementedError()
 
         elif isinstance(message, json_rpc.JsonRPCError):
-            raise NotImplementedError()
+            logger.error(message)
 
         else:
             raise ValueError()
