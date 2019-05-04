@@ -18,7 +18,6 @@ async def process_child_stdout(c: asyncio.StreamReader, push):
         if not b:
             logger.debug(b'stdout break\n')
             break
-
         push(b[0])
 
 
@@ -28,7 +27,7 @@ async def process_child_stderr(c: asyncio.StreamReader):
         if not line:
             logger.debug(b'stderr break\n')
             break
-        logger.debug(line)
+        #logger.debug(line)
 
 
 class Pyls:
@@ -53,15 +52,19 @@ class Pyls:
                                                       stdout=subprocess.PIPE,
                                                       stderr=subprocess.PIPE,
                                                       stdin=subprocess.PIPE)
+        logger.debug('create process: %s', self.cmd)
 
         # start pipe reader
         asyncio.create_task(process_child_stderr(self.p.stderr))
         asyncio.create_task(process_child_stdout(self.p.stdout, self.push))
 
-        request = self.dispatcher.create_request('initialize', {})
-        self.send_request(request)
+        result = await self.async_initialize()
+        logger.debug(result)
 
-        await self.p.wait()
+    async def async_initialize(self):
+        logger.debug('initialize...')
+        return await self.dispatcher.async_request(self.p.stdin, 'initialize',
+                                                   {})
 
     async def async_open(self, path) -> None:
         logger.debug(path)
@@ -69,7 +72,7 @@ class Pyls:
     def push(self, b: int) -> None:
         request = self.splitter.push(b)
         if request:
-            logger.debug(request)
+            #logger.debug(request)
             self.dispatcher.dispatch_jsonrpc(request.body)
 
 
@@ -95,6 +98,13 @@ class LanguageServerManager:
 
 # {{{
 if __name__ == '__main__':
+    f = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
+    logging.basicConfig(level=logging.DEBUG, datefmt='%H:%M:%S', format=f)
     lsm = LanguageServerManager()
-    asyncio.run(lsm.async_document_open(__file__))
+
+    async def run():
+        await lsm.async_document_open(__file__)
+        await lsm.pyls.p.wait()
+
+    asyncio.run(run())
 # }}}

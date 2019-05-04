@@ -1,5 +1,6 @@
-from typing import Dict, Any, Optional
+import asyncio
 import json
+from typing import Dict, Any, Optional
 
 import logging
 from workspacefolder import json_rpc
@@ -30,6 +31,7 @@ class Dispatcher:
     def __init__(self):
         self.method_map: Dict[str, Any] = {}
         self.next_request_id = 1
+        self.request_map = {}
 
     def register(self, name: str, callback) -> None:
         self.method_map[name] = callback
@@ -46,17 +48,30 @@ class Dispatcher:
                 if name:
                     self.register(name, m)
 
-    def create_request(self, method, *args) -> bytes:
+    def _create_request(self, method, *args):
         request_id = self.next_request_id
         self.next_request_id += 1
         request = {
             'jsonrpc': '2.0',
             'method': method,
-            'id': request_id,
             'params': args,
+            'id': request_id,
         }
-        json_request = json.dumps(request)
-        return json_request.encode('utf-8')
+        return request
+
+    def async_request(self, w, method, *args) -> asyncio.Future:
+        request = self._create_request(method, *args)
+
+        loop = asyncio.get_running_loop()
+        fut = loop.create_future()
+        self.request_map[request['id']] = fut
+
+        json_bytes = json.dumps(request).encode('utf-8')
+        w.write(f'Content-Length: {len(json_bytes)}\r\n\r\n'.encode('ascii'))
+        w.write(json_bytes)
+        logger.debug('write: %s', json_bytes)
+
+        return fut
 
     def dispatch_jsonrpc(self, body: bytes) -> Optional[bytes]:
         '''
@@ -105,9 +120,18 @@ class Dispatcher:
             raise NotImplementedError()
 
         elif isinstance(message, json_rpc.JsonRPCError):
-            logger.error(message)
+            self.dispatch_jsonerrror(message)
 
         else:
             raise ValueError()
 
         return None
+
+    def dispatch_jsonerrror(self, err: json_rpc.JsonRPCError):
+        if err.id:
+            fut = self.request_map.get(err.id)
+            if fut:
+                fut.set_result(err)
+                return
+        logger.error(err)
+
