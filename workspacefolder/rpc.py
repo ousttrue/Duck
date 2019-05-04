@@ -10,11 +10,52 @@ logger = logging.getLogger(__name__)
 BOM = b'\xef\xbb\xbf'
 
 
+class Pyls:
+    def __init__(self):
+        pass
+
+    async def async_launch(self):
+        pass
+
+    async def async_open(self, path) -> None:
+        pass
+
+
+class LanguageServerManager:
+    def __init__(self):
+        self.pyls = None
+
+    @dispatcher.rpc_method
+    def document_open(self, path) -> None:
+        asyncio.create_task(self.async_document_open(path))
+
+    async def get_or_launch(self, path):
+        if not self.pyls:
+            self.pyls = Pyls()
+            await self.pyls.async_launch()
+        return self.pyls
+
+    async def async_document_open(self, path) -> None:
+        pyls = await self.get_or_launch(path)
+        await pyls.async_open(path)
+
+
 async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     splitter = http.HttpSplitter()
 
     loop = asyncio.get_event_loop()
-    bom_check: Optional[bytearray] = bytearray()
+
+    # fix BOM from powershell pipe
+    # async read a byte.
+    # use threadpool executor for stdin of Windows
+    bom_check = await loop.run_in_executor(None, r.read, 3)
+    if not bom_check:
+        logger.debug('stdin break')
+        return
+    if bom_check != BOM:
+        for b in bom_check:
+            splitter.push(b)
+
     while True:
         # async read a byte.
         # use threadpool executor for stdin of Windows
@@ -24,35 +65,27 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
             break
         b = read_byte[0]
 
-        if bom_check is not None:
-            # fix BOM from powershell pipe
-            bom_check.append(b)
-            if len(bom_check) == 3:
-                if bytes(bom_check) != BOM:
-                    for b in bom_check:
-                        splitter.push(b)
-                bom_check = None
-
-        else:
-            request = splitter.push(b)
-            if request:
-                body = dispatcher.dispatch_jsonrpc(request.body)
-                if body:
-                    w.write(b'Content-Length: ')
-                    w.write(str(len(body)).encode('ascii'))
-                    w.write(b'\r\n\r\n')
-                    w.write(body)
+        request = splitter.push(b)
+        if request:
+            body = dispatcher.dispatch_jsonrpc(request.body)
+            if body:
+                w.write(b'Content-Length: ')
+                w.write(str(len(body)).encode('ascii'))
+                w.write(b'\r\n\r\n')
+                w.write(body)
 
 
 def execute(parsed):
     d = dispatcher.Dispatcher()
 
+    lsm = LanguageServerManager()
+    d.register_methods(lsm)
+
     if parsed.debug:
         d.register_dbug_methods()
 
     # block until stdin break
-    asyncio.run(
-        start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer, d))
+    asyncio.run(start_stdin_reader(sys.stdin.buffer, sys.stdout.buffer, d))
 
 
 # {{{
