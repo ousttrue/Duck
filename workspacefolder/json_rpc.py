@@ -5,28 +5,28 @@ logger = logging.getLogger(__name__)
 
 
 class JsonRPCRequest(NamedTuple):
-    method: bytes
+    method: str
     params: Union[list, dict]
     id: int
-    jsonrpc: bytes = b'2.0'
+    jsonrpc: str = '2.0'
 
 
 class JsonRPCResponse(NamedTuple):
     id: int
     result: Any
-    jsonrpc: bytes = b'2.0'
+    jsonrpc: str = '2.0'
 
 
 class JsonRPCError(NamedTuple):
     id: int
     error: str
-    jsonrpc: bytes = b'2.0'
+    jsonrpc: str = '2.0'
 
 
 class JsonRPCNotify(NamedTuple):
-    method: bytes
+    method: str
     params: Union[list, dict]
-    jsonrpc: bytes = b'2.0'
+    jsonrpc: str = '2.0'
 
 
 def parse(

@@ -13,7 +13,6 @@ def add(a, b):
     return a + b
 
 
-
 class Dispatcher:
     def __init__(self):
         self.method_map: Dict[str, Any] = {}
