@@ -13,6 +13,18 @@ def add(a, b):
     return a + b
 
 
+RPC_KEY = '_RPC_METHOD'
+
+
+def rpc_method(func, name: str = None):
+    '''
+    decorator for method marking
+    '''
+
+    setattr(func, RPC_KEY, name if name else func.__name__)
+    return func
+
+
 class Dispatcher:
     def __init__(self):
         self.method_map: Dict[str, Any] = {}
@@ -23,6 +35,14 @@ class Dispatcher:
     def register_dbug_methods(self) -> None:
         self.register('hello', hello)
         self.register('add', add)
+
+    def register_methods(self, obj) -> None:
+        for key in dir(obj):
+            m = getattr(obj, key)
+            if hasattr(m, RPC_KEY):
+                name = getattr(m, RPC_KEY)
+                if name:
+                    self.register(name, m)
 
     def dispatch_jsonrpc(self, body: bytes) -> Optional[bytes]:
         '''
