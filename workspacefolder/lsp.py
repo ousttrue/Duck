@@ -69,10 +69,16 @@ class LanguageServer:
                                        col: int):
         params = TextDocumentPositionParams(
             TextDocumentIdentifier(to_uri(path)), Position(line, col))
-        logger.debug(util.to_dict(params))
-
         request = self.stream.dispatcher.create_request(
             'textDocument/documentHighlight', **util.to_dict(params))
+        return await self.stream.async_request(request)
+
+    async def async_document_definition(self, path: pathlib.Path, line: int,
+                                        col: int):
+        params = TextDocumentPositionParams(
+            TextDocumentIdentifier(to_uri(path)), Position(line, col))
+        request = self.stream.dispatcher.create_request(
+            'textDocument/definition', **util.to_dict(params))
         return await self.stream.async_request(request)
 
     def notify_open(self, path: pathlib.Path) -> None:
@@ -115,6 +121,12 @@ class LanguageServerManager:
         if ls:
             await ls.async_document_highlight(path, line, col)
 
+    async def async_document_definition(self, path: pathlib.Path, line: int,
+                                       col: int) -> None:
+        ls = await self.ensure_launch(path)
+        if ls:
+            await ls.async_document_definition(path, line, col)
+
 
 # {{{
 if __name__ == '__main__':
@@ -125,6 +137,7 @@ if __name__ == '__main__':
     async def run():
         await lsm.async_document_open(pathlib.Path(__file__))
         await lsm.async_document_highlight(pathlib.Path(__file__), 0, 0)
+        await lsm.async_document_definition(pathlib.Path(__file__), 60, 35)
 
         lsm.pyls.terminate()
         logger.debug('done')
