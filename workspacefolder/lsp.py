@@ -50,6 +50,9 @@ class LanguageServer:
     def isenable(self) -> bool:
         return self.stream.p.returncode is None
 
+    def terminate(self) -> None:
+        self.stream.terminate()
+
     async def async_request_initialize(
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
