@@ -27,7 +27,6 @@ def main():
     parser.add_argument('--wrap',
                         action='store_true')
 
-    parser.add_argument('cmd')
     parser.add_argument('args', nargs='*')
 
     args = parser.parse_args()

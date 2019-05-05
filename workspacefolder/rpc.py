@@ -8,6 +8,15 @@ from workspacefolder import http, dispatcher, json_rpc, lsp
 logger = logging.getLogger(__name__)
 
 
+async def async_dispatch(dispatcher, request, w):
+    body = await dispatcher.async_dispatch(request.body)
+    if body:
+        w.write(b'Content-Length: ')
+        w.write(str(len(body)).encode('ascii'))
+        w.write(b'\r\n\r\n')
+        w.write(body)
+
+
 async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     splitter = http.HttpSplitter()
 
@@ -35,12 +44,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
 
         request = splitter.push(b)
         if request:
-            body = dispatcher.dispatch_jsonrpc(request.body)
-            if body:
-                w.write(b'Content-Length: ')
-                w.write(str(len(body)).encode('ascii'))
-                w.write(b'\r\n\r\n')
-                w.write(body)
+            asyncio.create_task(async_dispatch(dispatcher, request, w))
 
 
 def execute(parsed):

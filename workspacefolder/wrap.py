@@ -122,8 +122,10 @@ async def launch(cmd: str, args: List[str], log):
 
 def execute(parsed):
     def run(log):
-        log.write(f'{parsed.cmd} {parsed.args}\n'.encode('utf-8'))
-        asyncio.run(launch(parsed.cmd, parsed.args, log))
+        cmd = parsed.args[0]
+        args = parsed.args[1:]
+        log.write(f'{cmd} {args}\n'.encode('utf-8'))
+        asyncio.run(launch(cmd, args, log))
 
     if parsed.logfile:
         logfile = pathlib.Path(parsed.logfile)

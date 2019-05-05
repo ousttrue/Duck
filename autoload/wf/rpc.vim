@@ -68,7 +68,7 @@ function! s:on_stdout(job_id, data, event_type) abort
 endfunction
 
 function! s:on_stderr(job_id, data, event_type) abort
-    echom printf('%d ##> %s: %s', a:job_id, a:event_type, a:data)
+    echom printf('%d ##> %s: %s', a:job_id, a:event_type, join(a:data, "\n"))
 endfunction
 
 function! s:on_exit(job_id, data, event_type) abort
