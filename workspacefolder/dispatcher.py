@@ -48,7 +48,7 @@ class Dispatcher:
                 if name:
                     self.register(name, m)
 
-    def _create_request(self, method, *args, **kw):
+    def create_request(self, method, *args, **kw):
         params = None
         if args and kw:
             raise ValueError()
@@ -59,22 +59,16 @@ class Dispatcher:
 
         request_id = self.next_request_id
         self.next_request_id += 1
-        request = {
-            'jsonrpc': '2.0',
-            'method': method,
-            'params': params,
-            'id': request_id,
-        }
-        return request
 
-    def async_request(self, w, method, *args, **kw) -> asyncio.Future:
-        request = self._create_request(method, *args, **kw)
+        return json_rpc.JsonRPCRequest(method, params, request_id)
+
+    def async_request(self, w, request: json_rpc.JsonRPCRequest) -> asyncio.Future:
 
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
-        self.request_map[request['id']] = fut
+        self.request_map[request.id] = fut
 
-        json_bytes = json.dumps(request).encode('utf-8')
+        json_bytes = json.dumps(request._asdict()).encode('utf-8')
         w.write(f'Content-Length: {len(json_bytes)}\r\n\r\n'.encode('ascii'))
         w.write(json_bytes)
         w.flush()

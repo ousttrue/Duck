@@ -75,12 +75,13 @@ class Pyls:
     async def async_initialize(
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
-        params = {'rootUrih': str(rootUri)}
-        return await self.dispatcher.async_request(self.p.stdin, 'initialize',
-                                                   **params)
+        request = self.dispatcher.create_request('initialize',
+                                                 rootUri=str(rootUri))
+        logger.debug(request)
+        return await self.dispatcher.async_request(self.p.stdin, request)
 
     async def async_open(self, path: pathlib.Path) -> None:
-        logger.debug(path)
+        self.dispatcher.create_request('textDocument/didOpen')
 
     def push(self, b: int) -> None:
         request = self.splitter.push(b)
