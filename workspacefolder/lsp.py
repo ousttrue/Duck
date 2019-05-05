@@ -4,8 +4,8 @@ import sys
 import asyncio
 import subprocess
 import logging
-from typing import Union, IO, Any, NamedTuple
-from workspacefolder import dispatcher, http, json_rpc
+from typing import Union, IO, Any, NamedTuple, Optional
+from workspacefolder import dispatcher, http, json_rpc, util
 logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
@@ -19,11 +19,28 @@ def to_uri(path: pathlib.Path) -> str:
     return 'file:///' + str(path).replace('\\', '/')
 
 
+# types {{{
 class TextDocumentItem(NamedTuple):
     uri: str
     languageId: str
     version: int
     text: str
+
+
+class Position(NamedTuple):
+    line: int
+    character: int
+
+
+class TextDocumentIdentifier(NamedTuple):
+    uri: str
+    version: Optional[int] = None
+
+
+class TextDocumentPositionParams(NamedTuple):
+    textDocument: TextDocumentIdentifier
+    position: Position
+# }}}
 
 
 async def process_child_stdout(c: IO[Any], push):
@@ -49,6 +66,7 @@ async def process_child_stderr(c: IO[Any]):
 
 class Pyls:
     def __init__(self):
+        logger.debug('pyls')
         self.cmd = 'pyls'
         self.args = []
         self.p = None
@@ -68,16 +86,17 @@ class Pyls:
         self.p.stdin.flush()
 
     def _send_request(self, request: json_rpc.JsonRPCRequest):
-        logger.debug('<--request: %s', request.method)
 
-        request_json = json.dumps(request._asdict())
+        d = util.to_dict(request)
+        logger.debug('<--request: %s', d)
+        request_json = json.dumps(d)
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)
 
     def _send_notify(self, notify: json_rpc.JsonRPCNotify):
         logger.debug('<--notify: %s', notify.method)
 
-        request_json = json.dumps(notify._asdict())
+        request_json = json.dumps(util.to_dict(notify))
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)
 
@@ -101,7 +120,7 @@ class Pyls:
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         self._send_request(request)
         result = await self.dispatcher.wait_request(request)
-        logger.debug(result)
+        logger.debug('%d->%s', request.id, result)
         return result
 
     async def async_request_initialize(
@@ -116,11 +135,22 @@ class Pyls:
 
         return result
 
+    async def async_document_highlight(self, path: pathlib.Path, line: int,
+                                       col: int):
+        params = TextDocumentPositionParams(
+            TextDocumentIdentifier(to_uri(path)),
+            Position(line, col))
+        logger.debug(util.to_dict(params))
+
+        request = self.dispatcher.create_request(
+            'textDocument/documentHighlight', **util.to_dict(params))
+        return await self._async_request(request)
+
     def notify_open(self, path: pathlib.Path) -> None:
         textDocument = TextDocumentItem(to_uri(path), 'python', 1,
                                         path.read_text())
         notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
-                                        textDocument._asdict())
+                                        util.to_dict(textDocument))
         self._send_notify(notify)
 
     def push(self, b: int) -> None:
@@ -137,18 +167,29 @@ class LanguageServerManager:
     def document_open(self, path: str) -> None:
         asyncio.create_task(self.async_document_open(pathlib.Path(path)))
 
+    async def laucn_pyls(self, path:pathlib.Path)->Pyls:
+        if self.pyls:
+            if self.pyls.p.returncode is None:
+                return self.pyls
+
+        self.pyls = Pyls()
+        await self.pyls.async_launch(path.parent)
+        return self.pyls
+
     async def ensure_launch(self, path: pathlib.Path):
         if path.suffix == '.py':
-            if not self.pyls or (self.pyls.p
-                                 and self.pyls.p.returncode is not None):
-                self.pyls = Pyls()
-                await self.pyls.async_launch(path.parent)
-                return self.pyls
+            return await self.laucn_pyls(path)
 
     async def async_document_open(self, path: pathlib.Path) -> None:
         pyls = await self.ensure_launch(path)
         if pyls:
             pyls.notify_open(path)
+
+    async def async_document_highlight(self, path: pathlib.Path, line: int,
+                                       col: int) -> None:
+        pyls = await self.ensure_launch(path)
+        if pyls:
+            await pyls.async_document_highlight(path, line, col)
 
 
 # {{{
@@ -159,6 +200,8 @@ if __name__ == '__main__':
 
     async def run():
         await lsm.async_document_open(pathlib.Path(__file__))
+        await lsm.async_document_highlight(pathlib.Path(__file__), 0, 0)
+
         lsm.pyls.terminate()
         logger.debug('done')
 
