@@ -1,4 +1,5 @@
 import pathlib
+import json
 import sys
 import asyncio
 import logging
@@ -78,7 +79,7 @@ class LanguageServer:
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         self.stream.send_request(request)
         result = await self.dispatcher.wait_request(request)
-        logger.debug('%d->%s', request.id, result)
+        logger.debug('%d->%s', request.id, json.dumps(result, indent=2))
         return result
 
     async def async_request_initialize(

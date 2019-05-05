@@ -1,4 +1,5 @@
 import inspect
+import json
 from typing import NamedTuple
 
 
@@ -12,6 +13,9 @@ def to_dict(src) -> dict:
     else:
         return src
 
+def indent_json(src: bytes)->bytes:
+    j = json.loads(src)
+    return json.dumps(j, indent=2).encode('utf-8')
 
 if __name__ == '__main__':
 
