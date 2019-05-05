@@ -11,10 +11,14 @@ logger = logging.getLogger(__name__)
 async def async_dispatch(dispatcher, request, w):
     body = await dispatcher.async_dispatch(request.body)
     if body:
-        w.write(b'Content-Length: ')
-        w.write(str(len(body)).encode('ascii'))
-        w.write(b'\r\n\r\n')
-        w.write(body)
+        bio = io.BytesIO()
+        bio.write(b'Content-Length: ')
+        bio.write(str(len(body)).encode('ascii'))
+        bio.write(b'\r\n\r\n')
+        bio.write(body)
+        bio.seek(0)
+        w.write(bio.getvalue())
+        w.flush()
 
 
 async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:

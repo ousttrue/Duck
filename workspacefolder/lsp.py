@@ -57,7 +57,12 @@ class LanguageServer:
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         request = self.stream.dispatcher.create_request(
-            'initialize', rootUri=to_uri(rootUri))
+            'initialize',
+            rootUri=to_uri(rootUri),
+            rootPath=str(rootUri),
+            capabilities={'workspace': {
+                'applyEdit': True
+            }})
         result = await self.stream.async_request(request)
 
         initialized = json_rpc.JsonRPCNotify('initialized', {})
@@ -83,7 +88,7 @@ class LanguageServer:
 
     def notify_open(self, path: pathlib.Path) -> None:
         textDocument = TextDocumentItem(to_uri(path), 'python', 1,
-                                        path.read_text())
+                                        path.read_text(encoding='utf-8'))
         notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
                                         util.to_dict(textDocument))
         self.stream.send_notify(notify)
@@ -106,6 +111,10 @@ class LanguageServerManager:
         if path.suffix == '.py':
             return await self._launch_pyls(path)
 
+    def _get_ls(self, path: pathlib.Path):
+        if path.suffix == '.py':
+            return self.pyls
+
     @dispatcher.rpc_method
     async def notify_document_open(self, _path: str) -> None:
         path = pathlib.Path(_path)
@@ -115,17 +124,17 @@ class LanguageServerManager:
 
     @dispatcher.rpc_method
     async def request_document_highlight(self, _path: str, line: int,
-                                       col: int) -> None:
+                                         col: int) -> None:
         path = pathlib.Path(_path)
-        ls = await self._ensure_launch(path)
+        ls = self._get_ls(path)
         if ls:
             return await ls.async_document_highlight(path, line, col)
 
     @dispatcher.rpc_method
     async def request_document_definition(self, _path: str, line: int,
-                                       col: int) -> None:
+                                          col: int) -> None:
         path = pathlib.Path(_path)
-        ls = await self._ensure_launch(path)
+        ls = self._get_ls(path)
         if ls:
             return await ls.async_document_definition(path, line, col)
 

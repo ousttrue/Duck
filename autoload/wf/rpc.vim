@@ -50,7 +50,7 @@ function! s:on_stdout(job_id, data, event_type) abort
         " find HTTP header
         let m = matchstrpos(s:buffer, '^Content-Length: *\zs\d\+', 0)
         if m[1] == -1
-            echom printf('not match')
+            echom printf('not match: %s', s:buffer)
             break
         endif
         "echom printf('match: %s %d %d', m[0], m[1], m[2])
@@ -61,7 +61,7 @@ function! s:on_stdout(job_id, data, event_type) abort
         let l:consume = l:body_pos + l:content_length
         "echom printf('%d + %d/%d', l:content_length, l:body_pos, len(s:buffer))
 
-        let l:body = s:buffer[l:body_pos : l:body_pos + l:content_length]
+        let l:body = s:buffer[l:body_pos : l:body_pos + l:content_length-1]
         let s:buffer = s:buffer[l:consume :]
 
         call s:on_body(l:body)
