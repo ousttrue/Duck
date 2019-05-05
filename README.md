@@ -35,9 +35,10 @@ https://microsoft.github.io/debug-adapter-protocol/overview
 
 https://microsoft.github.io/language-server-protocol/
 
-* VSCodeの拡張を起動して、標準入出力から制御する。
-* vimのjob経由で起動する。
-* LSPがクラッシュしても自動で再起動する。
+* ⭕️ vimのjob経由で起動する。
+    * ⭕️ pyls
+    * 🔨 dls
+    * 🔨 cquery
 
 ### WorkspaceFolderの確定
 
@@ -45,44 +46,50 @@ https://microsoft.github.io/language-server-protocol/
 * 🔨 無くても親フォルダを遡りながらWorkspaceFolderを確定させる。
 * 🔨 .git, .vscode, package.json, Makefile, dub.json, setup.py等の探索。
 
-### vim plugin から RPCモードで起動する
-
-* 🔨 vimのjob経由で `python wf rpc` として起動する。標準入出力経由の、RPCモードになる。
-
 ## コマンドライン
 
-subcommands
-
-### 🔨 wrap
+### `--wrap`
 
 * ⭕️ 他のコマンドをラップする。lsp, dap のデバッグ用。 例えば、vim-lsp が pyls を起動するのに割り込む。
 
-`$ wf wrap --logfile log.txt pyls`
+`$ wf --wrap --logfile log.txt pyls`
 
-* 🔨 引数無しで指定のexeを起動する方法
+* 🔨 引数無しで任意のexeを起動できるように設定を見るようにする
 
-#### 🔨 --logfile=file
+#### `--logfile file`
 
 * ⭕️ ロギングしてデバッグの助けにする。
 * ⭕️ http splitter
-* 🔨 LSP表示(JSON-RPC)
-* 🔨 DAP表示
+* 🔨 LSPロギング(JSON-RPC)
+* 🔨 DAPロギング
 
-### rpc
+### `--rpc`
 
-* 🔨 vimのjob経由で起動するモード。
-* 🔨 標準入出力から接続する。
-* 🔨 HTTP内に埋め込んだJSON-RPC。
+* ⭕️ vimのjob経由で起動するモード。
+* ⭕️ 標準入出力から接続する。
+* ⭕️ JSON-RPC on HTTPもどき(Content-Lengthヘッダのみ)
 
 ### task
 
-* Workspace.toml に記述されたtaskを実行する。
-* 実行時の cwd を調整する。
+* 🔨 Workspace.toml に記述されたtaskを実行する。
+* 🔨 実行時の cwd を調整する。
 * 🔨 Workspace.toml に引数無し実行の記述を作る。
 
 ## vimplugin
 
 * ⭕️ job で起動する
-* 🔨 transportは、 `LSP` と同じ `HTTP-keepalive` 的なストリーム
-* 🔨 protocolは、 `JSON-RPC`
+* ⭕️ transportは、 `LSP` と同じ `HTTP-keepalive` 的なストリーム
+* ⭕️ protocolは、 `JSON-RPC`
+
+### LSP
+
+* ⭕️ `textDocument/didOpen` => initialize
+* 🔨 `textDocument/didChange` => update
+* ⭕️ `textDocument/definition` => jump
+* 🔨 `textDocument/publishDiagnostics` => gutter
+* 🔨 `textDocument/hover` => preview
+* 🔨 `textDocument/references` => jump list
+* 🔨 `textDocument/completion` => omnifunc
+* 🔨 `textDocument/completion` => omnifunc
+* 🔨 `textDocument/rename`
 
