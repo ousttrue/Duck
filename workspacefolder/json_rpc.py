@@ -25,7 +25,7 @@ class JsonRPCError(NamedTuple):
 
 class JsonRPCNotify(NamedTuple):
     method: str
-    params: Union[list, dict]
+    params: Any
     jsonrpc: str = '2.0'
 
 

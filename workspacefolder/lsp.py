@@ -1,6 +1,7 @@
 import pathlib
 import json
 import sys
+import os
 import asyncio
 import logging
 from typing import Union, NamedTuple, Optional
@@ -41,12 +42,16 @@ class TextDocumentPositionParams(NamedTuple):
     position: Position
 
 
+class DidOpenTextDocumentParams(NamedTuple):
+    textDocument: TextDocumentItem
+
+
 # }}}
 
 
 class LanguageServer:
     def __init__(self, cmd, *args):
-        self.initialized=False
+        self.initialized = False
         self.stream = pipestream.PipeStream(cmd, *args)
         # start stdout reader
         asyncio.create_task(self.stream.process_stdout(self._on_request))
@@ -55,12 +60,11 @@ class LanguageServer:
 
         self.dispatcher = dispatcher.Dispatcher('PipeStream')
 
-    def _on_request(self, request: http.HttpRequest)->None:
+    def _on_request(self, request: http.HttpRequest) -> None:
         # async_dispatchをスケジュールする
-        asyncio.create_task(
-            self.dispatcher.async_dispatch(request.body))
+        asyncio.create_task(self.dispatcher.async_dispatch(request.body))
 
-    def _on_error(self, line: bytes)->None:
+    def _on_error(self, line: bytes) -> None:
         # logging
         logger.error(line)
 
@@ -89,6 +93,8 @@ class LanguageServer:
             'initialize',
             rootUri=to_uri(rootUri),
             rootPath=str(rootUri),
+            trace='off',
+            processId=os.getpid(),
             capabilities={'workspace': {
                 'applyEdit': True
             }})
@@ -113,15 +119,18 @@ class LanguageServer:
                                         col: int):
         params = TextDocumentPositionParams(
             TextDocumentIdentifier(to_uri(path)), Position(line, col))
-        request = self.dispatcher.create_request(
-            'textDocument/definition', **util.to_dict(params))
+        request = self.dispatcher.create_request('textDocument/definition',
+                                                 **util.to_dict(params))
         return await self._async_request(request)
 
     def notify_open(self, path: pathlib.Path) -> None:
-        textDocument = TextDocumentItem(to_uri(path), 'python', 1,
-                                        path.read_text(encoding='utf-8'))
+
+        params = DidOpenTextDocumentParams(
+            TextDocumentItem(to_uri(path), 'python', 1,
+                             path.read_text(encoding='utf-8')))
+
         notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
-                                        util.to_dict(textDocument))
+                                        util.to_dict(params))
         self.stream.send_notify(notify)
 
 

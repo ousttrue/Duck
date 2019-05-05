@@ -37,7 +37,7 @@ function! s:highlight(ret) abort
         " no result
         return
     endif
-    echo printf("highlight: %s", a:ret)
+    "echo printf("highlight: %s", a:ret)
 endfunction
 
 function! wf#lsp#highlight() abort
