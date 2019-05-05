@@ -93,7 +93,7 @@ class LanguageServerManager:
     def __init__(self):
         self.pyls = None
 
-    async def _laucn_pyls(self, path: pathlib.Path) -> LanguageServer:
+    async def _launch_pyls(self, path: pathlib.Path) -> LanguageServer:
         if self.pyls:
             if self.pyls.isenable():
                 return self.pyls
@@ -104,39 +104,39 @@ class LanguageServerManager:
 
     async def _ensure_launch(self, path: pathlib.Path):
         if path.suffix == '.py':
-            return await self._laucn_pyls(path)
+            return await self._launch_pyls(path)
 
     @dispatcher.rpc_method
-    async def document_open(self, path: pathlib.Path) -> None:
+    async def notify_document_open(self, path: pathlib.Path) -> None:
         ls = await self._ensure_launch(path)
         if ls:
             ls.notify_open(path)
 
     @dispatcher.rpc_method
-    async def document_highlight(self, path: pathlib.Path, line: int,
+    async def request_document_highlight(self, path: pathlib.Path, line: int,
                                        col: int) -> None:
         ls = await self._ensure_launch(path)
         if ls:
             await ls.async_document_highlight(path, line, col)
 
     @dispatcher.rpc_method
-    async def document_definition(self, path: pathlib.Path, line: int,
+    async def request_document_definition(self, path: pathlib.Path, line: int,
                                        col: int) -> None:
         ls = await self._ensure_launch(path)
         if ls:
             await ls.async_document_definition(path, line, col)
 
 
-# {{{
+# debug {{{
 if __name__ == '__main__':
     f = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
     logging.basicConfig(level=logging.DEBUG, datefmt='%H:%M:%S', format=f)
     lsm = LanguageServerManager()
 
     async def run():
-        await lsm.document_open(pathlib.Path(__file__))
-        await lsm.document_highlight(pathlib.Path(__file__), 0, 0)
-        await lsm.document_definition(pathlib.Path(__file__), 60, 35)
+        await lsm.notify_document_open(pathlib.Path(__file__))
+        await lsm.request_document_highlight(pathlib.Path(__file__), 0, 0)
+        await lsm.request_document_definition(pathlib.Path(__file__), 60, 35)
 
         lsm.pyls.terminate()
         logger.debug('done')
