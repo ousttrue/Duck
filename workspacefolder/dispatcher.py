@@ -28,7 +28,8 @@ def rpc_method(func, name: str = None):
 
 
 class Dispatcher:
-    def __init__(self):
+    def __init__(self, name: str) -> None:
+        self.name = name
         self.method_map: Dict[str, Any] = {}
         self.next_request_id = 1
         self.request_map = {}
@@ -87,7 +88,7 @@ class Dispatcher:
         if isinstance(message, json_rpc.JsonRPCRequest):
             callback = self.method_map.get(message.method)
             if not callback:
-                raise ValueError(f'{message.method} not found')
+                logger.error('%s: %s not found', self.name, message.method)
 
             if isinstance(message.params, dict):
                 result = await callback(**message.params)
@@ -98,24 +99,21 @@ class Dispatcher:
                 return json_rpc.to_bytes(message.id, result)
 
             else:
-                raise ValueError('params not dict or list')
+                logger.error('%s: params not dict or list', self.name)
 
         elif isinstance(message, json_rpc.JsonRPCNotify):
-            # logger.debug(message)
             callback = self.method_map.get(message.method)
             if not callback:
-                raise ValueError(f'{message.method} not found')
+                logger.error('%s: %s not found', self.name, message.method)
 
             if isinstance(message.params, dict):
-                result = await callback(**message.params)
-                # notify not return
+                await callback(**message.params)
 
             elif isinstance(message.params, list):
-                result = await callback(*message.params)
-                # notify not return
+                await callback(*message.params)
 
             else:
-                raise ValueError('params not dict or list')
+                logger.error('%s: params not dict or list', self.name)
 
         elif isinstance(message, json_rpc.JsonRPCResponse):
             self.dispatch_response(message)
@@ -124,7 +122,7 @@ class Dispatcher:
             self.dispatch_errror(message)
 
         else:
-            raise ValueError()
+            logger.error('%s: invalid message: %s', self.name, message)
 
         return None
 
@@ -135,7 +133,7 @@ class Dispatcher:
             if fut:
                 fut.set_result(res.result)
                 return
-        logger.error(res)
+        logger.error('%s: %s', self.name, res)
 
     def dispatch_errror(self, err: json_rpc.JsonRPCError):
         request_id = err.id
@@ -144,4 +142,4 @@ class Dispatcher:
             if fut:
                 fut.set_result(err.error)
                 return
-        logger.error(err)
+        logger.error('%s: %s', self.name, err)

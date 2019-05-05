@@ -25,7 +25,7 @@ class PipeStream:
         self.args = args
         self.p = None
         self.splitter = http.HttpSplitter()
-        self.dispatcher = dispatcher.Dispatcher()
+        self.dispatcher = dispatcher.Dispatcher('PipeStream')
 
         # create process
         self.p = subprocess.Popen([self.cmd] + list(self.args),

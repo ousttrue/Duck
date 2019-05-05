@@ -48,7 +48,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
 
 
 def execute(parsed):
-    d = dispatcher.Dispatcher()
+    d = dispatcher.Dispatcher('RPC')
 
     lsm = lsp.LanguageServerManager()
     d.register_methods(lsm)
@@ -97,7 +97,7 @@ if __name__ == '__main__':
             r.seek(0, 0)
 
             w = io.BytesIO()
-            d = dispatcher.Dispatcher()
+            d = dispatcher.Dispatcher('RPCTest')
 
             d.register_dbug_methods()
 

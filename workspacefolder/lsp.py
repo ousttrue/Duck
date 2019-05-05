@@ -102,27 +102,29 @@ class LanguageServerManager:
         await self.pyls.async_request_initialize(path.parent)
         return self.pyls
 
-    async def _ensure_launch(self, _path: str):
-        path = pathlib.Path(_path)
+    async def _ensure_launch(self, path: pathlib.Path):
         if path.suffix == '.py':
             return await self._launch_pyls(path)
 
     @dispatcher.rpc_method
-    async def notify_document_open(self, path: str) -> None:
+    async def notify_document_open(self, _path: str) -> None:
+        path = pathlib.Path(_path)
         ls = await self._ensure_launch(path)
         if ls:
             ls.notify_open(path)
 
     @dispatcher.rpc_method
-    async def request_document_highlight(self, path: str, line: int,
+    async def request_document_highlight(self, _path: str, line: int,
                                        col: int) -> None:
+        path = pathlib.Path(_path)
         ls = await self._ensure_launch(path)
         if ls:
             return await ls.async_document_highlight(path, line, col)
 
     @dispatcher.rpc_method
-    async def request_document_definition(self, path: str, line: int,
+    async def request_document_definition(self, _path: str, line: int,
                                        col: int) -> None:
+        path = pathlib.Path(_path)
         ls = await self._ensure_launch(path)
         if ls:
             return await ls.async_document_definition(path, line, col)
