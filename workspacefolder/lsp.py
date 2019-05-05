@@ -3,7 +3,7 @@ import sys
 import asyncio
 import subprocess
 import logging
-from typing import Union, BinaryIO
+from typing import Union, IO, Any, NamedTuple
 from workspacefolder import dispatcher, http, json_rpc
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,14 @@ if sys.platform == "win32":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
-async def process_child_stdout(c: BinaryIO, push):
+class TextDocumentItem(NamedTuple):
+    uri: str
+    languageId: str
+    version: int
+    text: str
+
+
+async def process_child_stdout(c: IO[Any], push):
     loop = asyncio.get_running_loop()
 
     while True:
@@ -25,7 +32,7 @@ async def process_child_stdout(c: BinaryIO, push):
         push(b[0])
 
 
-async def process_child_stderr(c: BinaryIO):
+async def process_child_stderr(c: IO[Any]):
     loop = asyncio.get_running_loop()
 
     while True:
@@ -47,7 +54,7 @@ class Pyls:
         self.p.stdin.close()
         self.p.stdout.close()
         self.p.stderr.close()
-        #self.p.terminate()
+        # self.p.terminate()
 
     def send_request(self, request: bytes):
         logger.debug(request)
@@ -61,7 +68,6 @@ class Pyls:
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   stdin=subprocess.PIPE)
-        #logger.debug('create process: %s', self.cmd)
 
         # start pipe reader
         if self.p.stderr:
@@ -69,19 +75,23 @@ class Pyls:
         if self.p.stdout:
             asyncio.create_task(process_child_stdout(self.p.stdout, self.push))
 
-        result = await self.async_initialize(rootUri)
-        logger.debug(result)
+        await self.async_initialize(rootUri)
 
     async def async_initialize(
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         request = self.dispatcher.create_request('initialize',
                                                  rootUri=str(rootUri))
-        logger.debug(request)
         return await self.dispatcher.async_request(self.p.stdin, request)
 
-    async def async_open(self, path: pathlib.Path) -> None:
-        self.dispatcher.create_request('textDocument/didOpen')
+    async def async_open(
+            self, path: pathlib.Path
+    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
+        textDocument = TextDocumentItem(str(path), 'python', 1,
+                                        path.read_text())
+        request = self.dispatcher.create_request('textDocument/didOpen',
+                                                 textDocument=textDocument)
+        return await self.dispatcher.async_request(self.p.stdin, request)
 
     def push(self, b: int) -> None:
         request = self.splitter.push(b)
@@ -97,16 +107,16 @@ class LanguageServerManager:
     def document_open(self, path: str) -> None:
         asyncio.create_task(self.async_document_open(pathlib.Path(path)))
 
-    async def get_or_launch(self, path: pathlib.Path) -> Pyls:
+    async def ensure_launch(self, path: pathlib.Path):
         if not self.pyls or (self.pyls.p
                              and self.pyls.p.returncode is not None):
             self.pyls = Pyls()
             await self.pyls.async_launch(path.parent)
-        return self.pyls
 
     async def async_document_open(self, path: pathlib.Path) -> None:
-        pyls = await self.get_or_launch(path)
-        await pyls.async_open(path)
+        await self.ensure_launch(path)
+        await self.pyls.async_open(path)
+        logger.debug('done')
 
 
 # {{{

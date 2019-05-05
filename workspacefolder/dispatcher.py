@@ -72,7 +72,7 @@ class Dispatcher:
         w.write(f'Content-Length: {len(json_bytes)}\r\n\r\n'.encode('ascii'))
         w.write(json_bytes)
         w.flush()
-        logger.debug('write: %s', json_bytes)
+        # logger.debug('write: %s', json_bytes)
 
         return fut
 
