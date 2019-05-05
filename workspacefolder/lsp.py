@@ -62,19 +62,20 @@ class Pyls:
         # self.p.terminate()
 
     def _send_body(self, body: bytes):
-        logger.debug(body)
         header = f'Content-Length: {len(body)}\r\n\r\n'
         self.p.stdin.write(header.encode('ascii'))
         self.p.stdin.write(body)
         self.p.stdin.flush()
 
     def _send_request(self, request: json_rpc.JsonRPCRequest):
+        logger.debug('<--request: %s', request.method)
 
         request_json = json.dumps(request._asdict())
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)
 
     def _send_notify(self, notify: json_rpc.JsonRPCNotify):
+        logger.debug('<--notify: %s', notify.method)
 
         request_json = json.dumps(notify._asdict())
         request_bytes = request_json.encode('utf-8')
@@ -137,16 +138,17 @@ class LanguageServerManager:
         asyncio.create_task(self.async_document_open(pathlib.Path(path)))
 
     async def ensure_launch(self, path: pathlib.Path):
-        if not self.pyls or (self.pyls.p
-                             and self.pyls.p.returncode is not None):
-            self.pyls = Pyls()
-            await self.pyls.async_launch(path.parent)
+        if path.suffix == '.py':
+            if not self.pyls or (self.pyls.p
+                                 and self.pyls.p.returncode is not None):
+                self.pyls = Pyls()
+                await self.pyls.async_launch(path.parent)
+                return self.pyls
 
     async def async_document_open(self, path: pathlib.Path) -> None:
-        await self.ensure_launch(path)
-        await asyncio.sleep(2)
-        self.pyls.notify_open(path)
-        logger.debug('done')
+        pyls = await self.ensure_launch(path)
+        if pyls:
+            pyls.notify_open(path)
 
 
 # {{{
@@ -158,6 +160,7 @@ if __name__ == '__main__':
     async def run():
         await lsm.async_document_open(pathlib.Path(__file__))
         lsm.pyls.terminate()
+        logger.debug('done')
 
     asyncio.run(run())
 # }}}

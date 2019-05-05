@@ -101,7 +101,7 @@ class Dispatcher:
                 raise ValueError('params not dict or list')
 
         elif isinstance(message, json_rpc.JsonRPCNotify):
-            logger.debug(message)
+            # logger.debug(message)
             callback = self.method_map.get(message.method)
             if not callback:
                 raise ValueError(f'{message.method} not found')
