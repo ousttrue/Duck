@@ -15,6 +15,10 @@ if sys.platform == "win32":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
+def to_uri(path: pathlib.Path) -> str:
+    return 'file:///' + str(path).replace('\\', '/')
+
+
 class TextDocumentItem(NamedTuple):
     uri: str
     languageId: str
@@ -57,17 +61,24 @@ class Pyls:
         self.p.stderr.close()
         # self.p.terminate()
 
-    def _send_request(
-            self,
-            request: Union[json_rpc.JsonRPCRequest, json_rpc.JsonRPCNotify]):
+    def _send_body(self, body: bytes):
+        logger.debug(body)
+        header = f'Content-Length: {len(body)}\r\n\r\n'
+        self.p.stdin.write(header.encode('ascii'))
+        self.p.stdin.write(body)
+        self.p.stdin.flush()
+
+    def _send_request(self, request: json_rpc.JsonRPCRequest):
 
         request_json = json.dumps(request._asdict())
         request_bytes = request_json.encode('utf-8')
+        self._send_body(request_bytes)
 
-        header = f'Content-Length: {len(request_bytes)}\r\n\r\n'
-        self.p.stdin.write(header.encode('ascii'))
-        self.p.stdin.write(request_bytes)
-        self.p.stdin.flush()
+    def _send_notify(self, notify: json_rpc.JsonRPCNotify):
+
+        request_json = json.dumps(notify._asdict())
+        request_bytes = request_json.encode('utf-8')
+        self._send_body(request_bytes)
 
     async def async_launch(self, rootUri: pathlib.Path):
         # create process
@@ -88,7 +99,6 @@ class Pyls:
             self, request: json_rpc.JsonRPCRequest
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         self._send_request(request)
-        logger.debug(request)
         result = await self.dispatcher.wait_request(request)
         logger.debug(result)
         return result
@@ -97,15 +107,20 @@ class Pyls:
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         request = self.dispatcher.create_request('initialize',
-                                                 rootUri=str(rootUri))
-        return await self._async_request(request)
+                                                 rootUri=to_uri(rootUri))
+        result = await self._async_request(request)
+
+        initialized = json_rpc.JsonRPCNotify('initialized', {})
+        self._send_notify(initialized)
+
+        return result
 
     def notify_open(self, path: pathlib.Path) -> None:
-        textDocument = TextDocumentItem(str(path), 'python', 1,
+        textDocument = TextDocumentItem(to_uri(path), 'python', 1,
                                         path.read_text())
         notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
                                         textDocument._asdict())
-        self._send_request(notify)
+        self._send_notify(notify)
 
     def push(self, b: int) -> None:
         request = self.splitter.push(b)
@@ -129,6 +144,7 @@ class LanguageServerManager:
 
     async def async_document_open(self, path: pathlib.Path) -> None:
         await self.ensure_launch(path)
+        await asyncio.sleep(2)
         self.pyls.notify_open(path)
         logger.debug('done')
 
