@@ -7,7 +7,7 @@ from typing import List
 
 if sys.platform == "win32":
     # for asyncio.create_subprocess_exec
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    #asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -60,23 +60,24 @@ class Logger:
                 return True
 
 
-async def stdin_to_childstdin(w: asyncio.StreamWriter, pool, logger):
+async def stdin_to_childstdin(w: asyncio.StreamWriter, logger):
     loop = asyncio.get_event_loop()
     stdin = sys.stdin.buffer
     while True:
-        b = await loop.run_in_executor(pool, stdin.read, 1)
+        b = await loop.run_in_executor(None, stdin.read, 1)
         if not b:
             logger.f.write(b'stdin break')
             break
 
         w.write(b)
         if logger.write(b):
-            await w.drain()
+            w.flush()
 
 
 async def process_child_stdout(c: asyncio.StreamReader, logger):
+    loop = asyncio.get_event_loop()
     while True:
-        b = await c.read(1)
+        b = await loop.run_in_executor(None, c.read, 1)
         if not b:
             logger.f.write(b'stdout break\n')
             break
@@ -84,12 +85,12 @@ async def process_child_stdout(c: asyncio.StreamReader, logger):
         # sync
         sys.stdout.buffer.write(b)
         if logger.write(b):
-            w.stdout.buffer.flush()
+            sys.stdout.buffer.flush()
 
 
 async def process_child_stderr(c: asyncio.StreamReader, log):
     while True:
-        b = await c.readline()
+        b = await loop.run_in_executor(None, c.readline)
         if not b:
             log.write(b'stderr break\n')
             break
@@ -104,21 +105,19 @@ async def process_child_stderr(c: asyncio.StreamReader, log):
 
 async def launch(cmd: str, args: List[str], log):
     # create process
-    p = await asyncio.create_subprocess_exec(cmd,
+    p = subprocess.Popen(cmd,
                                              *args,
                                              stdout=subprocess.PIPE,
                                              stderr=subprocess.PIPE,
                                              stdin=subprocess.PIPE)
 
-    with concurrent.futures.ThreadPoolExecutor() as pool:
-        asyncio.create_task(process_child_stderr(p.stderr, log))
-        asyncio.create_task(process_child_stdout(p.stdout, Logger(log, b'-->')))
-        asyncio.create_task(stdin_to_childstdin(p.stdin, pool,
-                                                Logger(log, b'<--')))
+    asyncio.create_task(process_child_stderr(p.stderr, log))
+    asyncio.create_task(stdin_to_childstdin(p.stdin, Logger(log, b'<--')))
+    await process_child_stdout(p.stdout, Logger(log, b'-->'))
 
-        ret = await p.wait()
-        log.write(f'ret: {ret}\n'.encode('ascii'))
-        sys.exit(ret)
+    #ret = await p.wait()
+    #log.write(f'ret: {ret}\n'.encode('ascii'))
+    #sys.exit(ret)
 
 
 def execute(parsed):
