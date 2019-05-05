@@ -1,6 +1,7 @@
+import logging
+import sys
 import argparse
 import pathlib
-import logging
 from workspacefolder import rpc, wrap
 
 # logging.lastResort = logging.NullHandler()
@@ -29,27 +30,41 @@ def main():
 
     parser.add_argument('args', nargs='*')
 
-    args = parser.parse_args()
+    # parse
+    parsed = parser.parse_args()
 
-    if args.debug:
-        f = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
-        logging.basicConfig(level=logging.DEBUG, datefmt='%H:%M:%S', format=f)
+    # clear output
+    logging.lastResort = logging.NullHandler()
+    level = logging.DEBUG
+    if parsed.debug:
+        level = logging.DEBUG
+
+    if parsed.logfile:
+        handler = logging.FileHandler(parsed.logfile)
     else:
-        # no output
-        logging.lastResort = logging.NullHandler()
+        handler = logging.StreamHandler(sys.stderr.buffer)
+
+    fmt = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
+    f = logging.Formatter(fmt, '%H:%M:%S')
+    handler.setLevel(level)
+    handler.setFormatter(f)
+    logging.getLogger().addHandler(handler)
 
     #
     # start
     #
-    if args.rpc:
-        # start stdin reader
-        rpc.execute(args)
-    elif args.wrap:
-        # start command line launcher
-        wrap.execute(args)
-    else:
-        # execute tasks
-        pass
+    try:
+        if parsed.rpc:
+            # start stdin reader
+            rpc.execute(parsed)
+        elif parsed.wrap:
+            # start command line launcher
+            wrap.execute(parsed)
+        else:
+            # execute tasks
+            pass
+    finally:
+        logging.shutdown()
 
 
 if __name__ == '__main__':

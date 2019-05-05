@@ -3,7 +3,9 @@ import sys
 import asyncio
 import concurrent.futures
 import subprocess
+import logging
 from typing import List
+logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
     # for asyncio.create_subprocess_exec
@@ -12,9 +14,8 @@ if sys.platform == "win32":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
-class Logger:
-    def __init__(self, f, prefix):
-        self.f = f
+class Splitter:
+    def __init__(self, prefix):
         self.content_length = 0
         self.headers = []
         self.buffer = bytearray()
@@ -38,57 +39,56 @@ class Logger:
                             break
                 else:
                     if l[0:3] == b'\xEF\xBB\xBF':
-                        l=l[3:]
+                        l = l[3:]
                     # add header
                     self.headers.append(l)
-                    self.f.write(self.prefix)
-                    self.f.write(l)
-                    self.f.write(b'\n')
-                    self.f.flush()
+                    logger.debug(self.prefix)
+                    logger.debug(l)
+                    logger.debug(b'\n')
 
         else:
             #sys.stderr.write(f'body {len(self.buffer)}/{self.content_length}\n')
             # body
             if len(self.buffer) == self.content_length:
-                self.f.write(self.prefix)
-                self.f.write(self.buffer)
-                self.f.write(b'\n')
-                self.f.flush()
+                logger.debug(self.prefix)
+                logger.debug(self.buffer)
+                logger.debug(b'\n')
                 self.buffer.clear()
                 self.headers.clear()
                 self.content_length = 0
                 return True
 
 
-async def stdin_to_childstdin(w: asyncio.StreamWriter, logger):
+async def stdin_to_childstdin(w: asyncio.StreamWriter, splitter):
     loop = asyncio.get_event_loop()
     stdin = sys.stdin.buffer
     while True:
         b = await loop.run_in_executor(None, stdin.read, 1)
         if not b:
-            logger.f.write(b'stdin break')
+            logger.debug(b'stdin break')
             break
 
         w.write(b)
-        if logger.write(b):
+        if splitter.write(b):
             w.flush()
 
 
-async def process_child_stdout(c: asyncio.StreamReader, logger):
+async def process_child_stdout(c: asyncio.StreamReader, splitter):
     loop = asyncio.get_event_loop()
     while True:
         b = await loop.run_in_executor(None, c.read, 1)
         if not b:
-            logger.f.write(b'stdout break\n')
+            logger.debug(b'stdout break\n')
             break
 
         # sync
         sys.stdout.buffer.write(b)
-        if logger.write(b):
+        if splitter.write(b):
             sys.stdout.buffer.flush()
 
 
-async def process_child_stderr(c: asyncio.StreamReader, log):
+async def process_child_stderr(c: asyncio.StreamReader):
+    loop = asyncio.get_event_loop()
     while True:
         b = await loop.run_in_executor(None, c.readline)
         if not b:
@@ -97,23 +97,22 @@ async def process_child_stderr(c: asyncio.StreamReader, log):
         # sync
         sys.stderr.buffer.write(b)
 
-        log.write(b'EE->')
-        log.write(b)
-        log.write('\n')
-        log.flush()
+        logger.debug(b'EE->')
+        logger.debug(b)
+        logger.debug('\n')
 
 
-async def launch(cmd: str, args: List[str], log):
+async def launch(cmd: str, args: List[str]):
     # create process
     p = subprocess.Popen(cmd,
-                                             *args,
-                                             stdout=subprocess.PIPE,
-                                             stderr=subprocess.PIPE,
-                                             stdin=subprocess.PIPE)
+                         *args,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE,
+                         stdin=subprocess.PIPE)
 
-    asyncio.create_task(process_child_stderr(p.stderr, log))
-    asyncio.create_task(stdin_to_childstdin(p.stdin, Logger(log, b'<--')))
-    await process_child_stdout(p.stdout, Logger(log, b'-->'))
+    asyncio.create_task(process_child_stderr(p.stderr))
+    asyncio.create_task(stdin_to_childstdin(p.stdin, Splitter(b'<--')))
+    await process_child_stdout(p.stdout, Splitter(b'-->'))
 
     #ret = await p.wait()
     #log.write(f'ret: {ret}\n'.encode('ascii'))
@@ -121,16 +120,7 @@ async def launch(cmd: str, args: List[str], log):
 
 
 def execute(parsed):
-    def run(log):
-        cmd = parsed.args[0]
-        args = parsed.args[1:]
-        log.write(f'{cmd} {args}\n'.encode('utf-8'))
-        asyncio.run(launch(cmd, args, log))
-
-    if parsed.logfile:
-        logfile = pathlib.Path(parsed.logfile)
-        with logfile.open('wb') as log:
-            run(log)
-    else:
-        run(sys.stderr.buffer)
-
+    cmd = parsed.args[0]
+    args = parsed.args[1:]
+    logger.debug(f'{cmd} {args}\n'.encode('utf-8'))
+    asyncio.run(launch(cmd, args))

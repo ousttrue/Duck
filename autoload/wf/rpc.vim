@@ -1,4 +1,5 @@
 let s:wf = fnamemodify(expand('<sfile>'), ':h:h:h') . '/workspacefolder/__init__.py'
+let s:logfile = fnamemodify(expand('<sfile>'), ':h:h:h') . '/wfrpc.log'
 
 function! wf#rpc#start(argv) abort
     if exists('s:job_id') && s:job_id
@@ -38,7 +39,7 @@ function! s:get_or_create_job() abort
         return s:job_id
     endif
 
-    let l:argv = [g:python3_host_prog, '-u', s:wf, '--rpc', '--debug']
+    let l:argv = [g:python3_host_prog, '-u', s:wf, '--rpc', '--debug', '--logfile', s:logfile]
     return wf#rpc#start(l:argv)
 endfunction
 
