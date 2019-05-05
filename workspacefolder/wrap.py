@@ -7,7 +7,7 @@ from typing import List
 
 if sys.platform == "win32":
     # for asyncio.create_subprocess_exec
-    #asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    # asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
