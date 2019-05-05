@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 
 import logging
 from workspacefolder import json_rpc
@@ -48,8 +48,8 @@ class Dispatcher:
                 if name:
                     self.register(name, m)
 
-    def create_request(self, method, *args, **kw):
-        params = None
+    def create_request(self, method, *args, **kw) -> json_rpc.JsonRPCRequest:
+        params: Any = None
         if args and kw:
             raise ValueError()
         elif args:
@@ -60,21 +60,20 @@ class Dispatcher:
         request_id = self.next_request_id
         self.next_request_id += 1
 
-        return json_rpc.JsonRPCRequest(method, params, request_id)
-
-    def async_request(self, w, request: json_rpc.JsonRPCRequest) -> asyncio.Future:
+        request = json_rpc.JsonRPCRequest(method, params, request_id)
 
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
         self.request_map[request.id] = fut
 
-        json_bytes = json.dumps(request._asdict()).encode('utf-8')
-        w.write(f'Content-Length: {len(json_bytes)}\r\n\r\n'.encode('ascii'))
-        w.write(json_bytes)
-        w.flush()
-        # logger.debug('write: %s', json_bytes)
+        return request
 
-        return fut
+    async def wait_request(
+            self, request: json_rpc.JsonRPCRequest
+    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
+
+        fut = self.request_map[request.id]
+        return await fut
 
     def dispatch_jsonrpc(self, body: bytes) -> Optional[bytes]:
         '''
@@ -108,11 +107,11 @@ class Dispatcher:
 
             if isinstance(message.params, dict):
                 result = callback(**message.params)
-                #return json_rpc.to_bytes(message.id, result)
+                # notify not return
 
             elif isinstance(message.params, list):
                 result = callback(*message.params)
-                #return json_rpc.to_bytes(message.id, result)
+                # notify not return
 
             else:
                 raise ValueError('params not dict or list')

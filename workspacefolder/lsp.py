@@ -1,4 +1,5 @@
 import pathlib
+import json
 import sys
 import asyncio
 import subprocess
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
     # for asyncio.create_subprocess_exec
-    #asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    # asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -56,11 +57,17 @@ class Pyls:
         self.p.stderr.close()
         # self.p.terminate()
 
-    def send_request(self, request: bytes):
-        logger.debug(request)
-        header = f'Content-Length: {len(request)}\r\n\r\n'
+    def _send_request(
+            self,
+            request: Union[json_rpc.JsonRPCRequest, json_rpc.JsonRPCNotify]):
+
+        request_json = json.dumps(request._asdict())
+        request_bytes = request_json.encode('utf-8')
+
+        header = f'Content-Length: {len(request_bytes)}\r\n\r\n'
         self.p.stdin.write(header.encode('ascii'))
-        self.p.stdin.write(request)
+        self.p.stdin.write(request_bytes)
+        self.p.stdin.flush()
 
     async def async_launch(self, rootUri: pathlib.Path):
         # create process
@@ -75,23 +82,30 @@ class Pyls:
         if self.p.stdout:
             asyncio.create_task(process_child_stdout(self.p.stdout, self.push))
 
-        await self.async_initialize(rootUri)
+        await self.async_request_initialize(rootUri)
 
-    async def async_initialize(
+    async def _async_request(
+            self, request: json_rpc.JsonRPCRequest
+    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
+        self._send_request(request)
+        logger.debug(request)
+        result = await self.dispatcher.wait_request(request)
+        logger.debug(result)
+        return result
+
+    async def async_request_initialize(
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         request = self.dispatcher.create_request('initialize',
                                                  rootUri=str(rootUri))
-        return await self.dispatcher.async_request(self.p.stdin, request)
+        return await self._async_request(request)
 
-    async def async_open(
-            self, path: pathlib.Path
-    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
+    def notify_open(self, path: pathlib.Path) -> None:
         textDocument = TextDocumentItem(str(path), 'python', 1,
                                         path.read_text())
-        request = self.dispatcher.create_request('textDocument/didOpen',
-                                                 textDocument=textDocument)
-        return await self.dispatcher.async_request(self.p.stdin, request)
+        notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
+                                        textDocument._asdict())
+        self._send_request(notify)
 
     def push(self, b: int) -> None:
         request = self.splitter.push(b)
@@ -115,7 +129,7 @@ class LanguageServerManager:
 
     async def async_document_open(self, path: pathlib.Path) -> None:
         await self.ensure_launch(path)
-        await self.pyls.async_open(path)
+        self.pyls.notify_open(path)
         logger.debug('done')
 
 
