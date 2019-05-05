@@ -7,16 +7,6 @@ from workspacefolder import http, dispatcher, json_rpc, util
 logger = logging.getLogger(__name__)
 
 
-async def process_child_stdout(c: IO[Any], push):
-    loop = asyncio.get_running_loop()
-
-    while True:
-        b = await loop.run_in_executor(None, c.read, 1)
-        if not b:
-            logger.debug(b'stdout break\n')
-            break
-        push(b[0])
-
 
 async def process_child_stderr(c: IO[Any]):
     loop = asyncio.get_running_loop()
@@ -46,7 +36,7 @@ class PipeStream:
         if self.p.stderr:
             asyncio.create_task(process_child_stderr(self.p.stderr))
         if self.p.stdout:
-            asyncio.create_task(process_child_stdout(self.p.stdout, self.push))
+            asyncio.create_task(self.process_child_stdout(self.p.stdout))
 
     def terminate(self):
         self.p.stdin.close()
@@ -75,10 +65,17 @@ class PipeStream:
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)
 
-    def push(self, b: int) -> None:
-        request = self.splitter.push(b)
-        if request:
-            self.dispatcher.dispatch_jsonrpc(request.body)
+    async def process_child_stdout(self, r: IO[Any]):
+        loop = asyncio.get_running_loop()
+
+        while True:
+            b = await loop.run_in_executor(None, r.read, 1)
+            if not b:
+                logger.debug(b'stdout break\n')
+                break
+            request = self.splitter.push(b[0])
+            if request:
+                asyncio.create_task(self.dispatcher.async_dispatch(request.body))
 
     async def async_request(
             self, request: json_rpc.JsonRPCRequest

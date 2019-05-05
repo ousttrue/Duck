@@ -7,11 +7,11 @@ from workspacefolder import json_rpc
 logger = logging.getLogger(__name__)
 
 
-def hello(target: str):
+async def hello(target: str):
     return 'hello ' + target
 
 
-def add(a, b):
+async def add(a, b):
     return a + b
 
 
@@ -75,7 +75,7 @@ class Dispatcher:
         fut = self.request_map[request.id]
         return await fut
 
-    def dispatch_jsonrpc(self, body: bytes) -> Optional[bytes]:
+    async def async_dispatch(self, body: bytes) -> Optional[bytes]:
         '''
         json_rpcメッセージを処理し、
             * メッセージがRequestだった場合
@@ -90,11 +90,11 @@ class Dispatcher:
                 raise ValueError(f'{message.method} not found')
 
             if isinstance(message.params, dict):
-                result = callback(**message.params)
+                result = await callback(**message.params)
                 return json_rpc.to_bytes(message.id, result)
 
             elif isinstance(message.params, list):
-                result = callback(*message.params)
+                result = await callback(*message.params)
                 return json_rpc.to_bytes(message.id, result)
 
             else:
@@ -107,11 +107,11 @@ class Dispatcher:
                 raise ValueError(f'{message.method} not found')
 
             if isinstance(message.params, dict):
-                result = callback(**message.params)
+                result = await callback(**message.params)
                 # notify not return
 
             elif isinstance(message.params, list):
-                result = callback(*message.params)
+                result = await callback(*message.params)
                 # notify not return
 
             else:

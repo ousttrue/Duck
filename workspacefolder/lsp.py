@@ -93,11 +93,7 @@ class LanguageServerManager:
     def __init__(self):
         self.pyls = None
 
-    @dispatcher.rpc_method
-    def document_open(self, path: str) -> None:
-        asyncio.create_task(self.async_document_open(pathlib.Path(path)))
-
-    async def laucn_pyls(self, path: pathlib.Path) -> LanguageServer:
+    async def _laucn_pyls(self, path: pathlib.Path) -> LanguageServer:
         if self.pyls:
             if self.pyls.isenable():
                 return self.pyls
@@ -106,24 +102,27 @@ class LanguageServerManager:
         await self.pyls.async_request_initialize(path.parent)
         return self.pyls
 
-    async def ensure_launch(self, path: pathlib.Path):
+    async def _ensure_launch(self, path: pathlib.Path):
         if path.suffix == '.py':
-            return await self.laucn_pyls(path)
+            return await self._laucn_pyls(path)
 
-    async def async_document_open(self, path: pathlib.Path) -> None:
-        ls = await self.ensure_launch(path)
+    @dispatcher.rpc_method
+    async def document_open(self, path: pathlib.Path) -> None:
+        ls = await self._ensure_launch(path)
         if ls:
             ls.notify_open(path)
 
-    async def async_document_highlight(self, path: pathlib.Path, line: int,
+    @dispatcher.rpc_method
+    async def document_highlight(self, path: pathlib.Path, line: int,
                                        col: int) -> None:
-        ls = await self.ensure_launch(path)
+        ls = await self._ensure_launch(path)
         if ls:
             await ls.async_document_highlight(path, line, col)
 
-    async def async_document_definition(self, path: pathlib.Path, line: int,
+    @dispatcher.rpc_method
+    async def document_definition(self, path: pathlib.Path, line: int,
                                        col: int) -> None:
-        ls = await self.ensure_launch(path)
+        ls = await self._ensure_launch(path)
         if ls:
             await ls.async_document_definition(path, line, col)
 
@@ -135,9 +134,9 @@ if __name__ == '__main__':
     lsm = LanguageServerManager()
 
     async def run():
-        await lsm.async_document_open(pathlib.Path(__file__))
-        await lsm.async_document_highlight(pathlib.Path(__file__), 0, 0)
-        await lsm.async_document_definition(pathlib.Path(__file__), 60, 35)
+        await lsm.document_open(pathlib.Path(__file__))
+        await lsm.document_highlight(pathlib.Path(__file__), 0, 0)
+        await lsm.document_definition(pathlib.Path(__file__), 60, 35)
 
         lsm.pyls.terminate()
         logger.debug('done')
