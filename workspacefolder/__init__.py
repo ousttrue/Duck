@@ -34,8 +34,8 @@ def main():
     parsed = parser.parse_args()
 
     # clear output
-    logging.lastResort = logging.NullHandler()
-    level = logging.DEBUG
+    #logging.lastResort = logging.NullHandler()
+    level = logging.INFO
     if parsed.debug:
         level = logging.DEBUG
 
@@ -48,7 +48,12 @@ def main():
     f = logging.Formatter(fmt, '%H:%M:%S')
     handler.setLevel(level)
     handler.setFormatter(f)
-    logging.getLogger().addHandler(handler)
+
+    root = logging.getLogger()
+    root.addHandler(handler)
+    root.setLevel(level)
+
+    logging.info('############################################################')
 
     #
     # start
@@ -63,6 +68,7 @@ def main():
         else:
             # execute tasks
             pass
+
     finally:
         logging.shutdown()
 
