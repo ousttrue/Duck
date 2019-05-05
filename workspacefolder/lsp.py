@@ -118,14 +118,14 @@ class LanguageServerManager:
                                        col: int) -> None:
         ls = await self._ensure_launch(path)
         if ls:
-            return await ls.async_document_highlight(path, line-1, col-1)
+            return await ls.async_document_highlight(path, line, col)
 
     @dispatcher.rpc_method
     async def request_document_definition(self, path: str, line: int,
                                        col: int) -> None:
         ls = await self._ensure_launch(path)
         if ls:
-            return await ls.async_document_definition(path, line-1, col-1)
+            return await ls.async_document_definition(path, line, col)
 
 
 # debug {{{
