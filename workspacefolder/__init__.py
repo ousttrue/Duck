@@ -40,9 +40,9 @@ def main():
         level = logging.DEBUG
 
     if parsed.logfile:
-        handler = logging.FileHandler(parsed.logfile)
+        handler = logging.FileHandler(parsed.logfile, encoding='utf-8')
     else:
-        handler = logging.StreamHandler(sys.stderr.buffer)
+        handler = logging.StreamHandler(sys.stderr)
 
     fmt = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
     f = logging.Formatter(fmt, '%H:%M:%S')

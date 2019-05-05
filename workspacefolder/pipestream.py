@@ -3,40 +3,24 @@ import asyncio
 import subprocess
 import logging
 from typing import Any, IO, Union
-from workspacefolder import http, dispatcher, json_rpc, util
+from workspacefolder import http, json_rpc, util
 logger = logging.getLogger(__name__)
 
 
-
-async def process_child_stderr(c: IO[Any]):
-    loop = asyncio.get_running_loop()
-
-    while True:
-        line = await loop.run_in_executor(None, c.readline)
-        if not line:
-            logger.debug(b'stderr break\n')
-            break
-
-
 class PipeStream:
+    '''
+    Pipe上に
+    HttpLike(StatusLine抜きの,Content-Lengthヘッダを必須とするメッセージ)な
+    経路を確立する。
+    '''
     def __init__(self, cmd, *args):
-        logger.debug('%s %s', cmd, args)
-        self.cmd = cmd
-        self.args = args
-        self.p = None
-        self.splitter = http.HttpSplitter()
-        self.dispatcher = dispatcher.Dispatcher('PipeStream')
-
-        # create process
-        self.p = subprocess.Popen([self.cmd] + list(self.args),
+        cmdline = [cmd] + list(args)
+        logger.debug('%s', cmdline)
+        self.p = subprocess.Popen(cmdline,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   stdin=subprocess.PIPE)
-        # start pipe reader
-        if self.p.stderr:
-            asyncio.create_task(process_child_stderr(self.p.stderr))
-        if self.p.stdout:
-            asyncio.create_task(self.process_child_stdout(self.p.stdout))
+        self.splitter = http.HttpSplitter()
 
     def terminate(self):
         self.p.stdin.close()
@@ -44,28 +28,8 @@ class PipeStream:
         self.p.stderr.close()
         # self.p.terminate()
 
-    def _send_body(self, body: bytes):
-        header = f'Content-Length: {len(body)}\r\n\r\n'
-        self.p.stdin.write(header.encode('ascii'))
-        self.p.stdin.write(body)
-        self.p.stdin.flush()
-
-    def _send_request(self, request: json_rpc.JsonRPCRequest):
-
-        d = util.to_dict(request)
-        logger.debug('<--request: %s', d)
-        request_json = json.dumps(d)
-        request_bytes = request_json.encode('utf-8')
-        self._send_body(request_bytes)
-
-    def send_notify(self, notify: json_rpc.JsonRPCNotify):
-        logger.debug('<--notify: %s', notify.method)
-
-        request_json = json.dumps(util.to_dict(notify))
-        request_bytes = request_json.encode('utf-8')
-        self._send_body(request_bytes)
-
-    async def process_child_stdout(self, r: IO[Any]):
+    async def process_stdout(self, on_request) -> None:
+        r = self.p.stdout
         loop = asyncio.get_running_loop()
 
         while True:
@@ -73,14 +37,41 @@ class PipeStream:
             if not b:
                 logger.debug(b'stdout break\n')
                 break
+
+            # split to http like message
             request = self.splitter.push(b[0])
             if request:
-                asyncio.create_task(self.dispatcher.async_dispatch(request.body))
+                on_request(request)
 
-    async def async_request(
-            self, request: json_rpc.JsonRPCRequest
-    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
-        self._send_request(request)
-        result = await self.dispatcher.wait_request(request)
-        logger.debug('%d->%s', request.id, result)
-        return result
+    async def process_stderr(self, on_error):
+        r = self.p.stderr
+        loop = asyncio.get_running_loop()
+
+        while True:
+            line = await loop.run_in_executor(None, r.readline)
+            if not line:
+                logger.debug(b'stderr break\n')
+                break
+
+            on_error(line)
+
+    def _send_body(self, body: bytes):
+        header = f'Content-Length: {len(body)}\r\n\r\n'
+        self.p.stdin.write(header.encode('ascii'))
+        self.p.stdin.write(body)
+        self.p.stdin.flush()
+
+    def send_request(self, request: json_rpc.JsonRPCRequest):
+        d = util.to_dict(request)
+        request_json = json.dumps(d, indent=2)
+        logger.debug('<--request: %s', request_json)
+        request_bytes = request_json.encode('utf-8')
+        self._send_body(request_bytes)
+
+    def send_notify(self, notify: json_rpc.JsonRPCNotify):
+        d = util.to_dict(notify)
+        request_json = json.dumps(d, indent=2)
+        logger.debug('<--notify: %s', request_json)
+        request_bytes = request_json.encode('utf-8')
+        self._send_body(request_bytes)
+

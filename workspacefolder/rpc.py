@@ -31,7 +31,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     # use threadpool executor for stdin of Windows
     bom_check = await loop.run_in_executor(None, r.read, 3)
     if not bom_check:
-        logger.debug('stdin break')
+        logger.debug(b'stdin break')
         return
     if bom_check != b'\xef\xbb\xbf':  # BOM
         for b in bom_check:
@@ -42,7 +42,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
         # use threadpool executor for stdin of Windows
         read_byte: bytes = await loop.run_in_executor(None, r.read, 1)
         if not read_byte:
-            logger.debug('stdin break')
+            logger.debug(b'stdin break')
             break
         b = read_byte[0]
 
@@ -52,7 +52,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
 
 
 def execute(parsed):
-    d = dispatcher.Dispatcher('RPC')
+    d = dispatcher.Dispatcher(b'RPC')
 
     lsm = lsp.LanguageServerManager()
     d.register_methods(lsm)

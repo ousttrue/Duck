@@ -3,7 +3,7 @@ import sys
 import asyncio
 import logging
 from typing import Union, NamedTuple, Optional
-from workspacefolder import dispatcher, json_rpc, util, pipestream
+from workspacefolder import dispatcher, json_rpc, util, pipestream, http
 logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
@@ -45,28 +45,58 @@ class TextDocumentPositionParams(NamedTuple):
 
 class LanguageServer:
     def __init__(self, cmd, *args):
+        self.initialized=False
         self.stream = pipestream.PipeStream(cmd, *args)
+        # start stdout reader
+        asyncio.create_task(self.stream.process_stdout(self._on_request))
+        # start stderr reader
+        asyncio.create_task(self.stream.process_stderr(self._on_error))
+
+        self.dispatcher = dispatcher.Dispatcher('PipeStream')
+
+    def _on_request(self, request: http.HttpRequest)->None:
+        # async_dispatchをスケジュールする
+        asyncio.create_task(
+            self.dispatcher.async_dispatch(request.body))
+
+    def _on_error(self, line: bytes)->None:
+        # logging
+        logger.error(line)
 
     def isenable(self) -> bool:
-        return self.stream.p.returncode is None
+        if not self.initialized:
+            return False
+        if self.stream.p.returncode is not None:
+            return False
+        return True
 
     def terminate(self) -> None:
         self.stream.terminate()
 
+    async def _async_request(
+            self, request: json_rpc.JsonRPCRequest
+    ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
+        self.stream.send_request(request)
+        result = await self.dispatcher.wait_request(request)
+        logger.debug('%d->%s', request.id, result)
+        return result
+
     async def async_request_initialize(
             self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
-        request = self.stream.dispatcher.create_request(
+        request = self.dispatcher.create_request(
             'initialize',
             rootUri=to_uri(rootUri),
             rootPath=str(rootUri),
             capabilities={'workspace': {
                 'applyEdit': True
             }})
-        result = await self.stream.async_request(request)
+        result = await self._async_request(request)
 
         initialized = json_rpc.JsonRPCNotify('initialized', {})
         self.stream.send_notify(initialized)
+
+        self.initialized = True
 
         return result
 
@@ -74,17 +104,17 @@ class LanguageServer:
                                        col: int):
         params = TextDocumentPositionParams(
             TextDocumentIdentifier(to_uri(path)), Position(line, col))
-        request = self.stream.dispatcher.create_request(
+        request = self.dispatcher.create_request(
             'textDocument/documentHighlight', **util.to_dict(params))
-        return await self.stream.async_request(request)
+        return await self._async_request(request)
 
     async def async_document_definition(self, path: pathlib.Path, line: int,
                                         col: int):
         params = TextDocumentPositionParams(
             TextDocumentIdentifier(to_uri(path)), Position(line, col))
-        request = self.stream.dispatcher.create_request(
+        request = self.dispatcher.create_request(
             'textDocument/definition', **util.to_dict(params))
-        return await self.stream.async_request(request)
+        return await self._async_request(request)
 
     def notify_open(self, path: pathlib.Path) -> None:
         textDocument = TextDocumentItem(to_uri(path), 'python', 1,
@@ -113,7 +143,8 @@ class LanguageServerManager:
 
     def _get_ls(self, path: pathlib.Path):
         if path.suffix == '.py':
-            return self.pyls
+            if self.pyls and self.pyls.isenable():
+                return self.pyls
 
     @dispatcher.rpc_method
     async def notify_document_open(self, _path: str) -> None:

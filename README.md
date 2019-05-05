@@ -39,6 +39,7 @@ https://microsoft.github.io/language-server-protocol/
     * ⭕️ pyls
     * 🔨 dls
     * 🔨 cquery
+* 🔨 state管理(stopped, starting, run)
 
 ### WorkspaceFolderの確定
 
