@@ -96,15 +96,20 @@ https://microsoft.github.io/language-server-protocol/
         client-notify
     datetime, msg, method, params, result, error
 
-* `textDocument/didOpen` => initialize
-    * ⭕️ aucmd FileType
-* 🔨 `textDocument/didChange` => update
+
+* `textDocument/didOpen`
+    * ⭕️ autocmd FileType
+* `textDocument/didChange`
+    * ⭕️ autocmd TextChanged, InsertLeave
+    * document バージョンの管理
 * `textDocument/definition`
     * ⭕️ cursor move
-    * 🔨 tag jump history
+    * ⭕️ 他のファイルへのジャンプ
+    * ⭕️ jumplist
 * `textDocument/publishDiagnostics`
     * ⭕️ receive
-    * 🔨 location list
+    * ⭕️ location list
+    * 🔨 buffer切り替え時に復旧する
     * 🔨 gutter
 * 🔨 `textDocument/hover` => preview
 * 🔨 `textDocument/references` => jump list

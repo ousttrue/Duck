@@ -34,7 +34,7 @@ def main():
     parsed = parser.parse_args()
 
     # clear output
-    #logging.lastResort = logging.NullHandler()
+    # logging.lastResort = logging.NullHandler()
     level = logging.INFO
     if parsed.debug:
         level = logging.DEBUG
@@ -53,7 +53,7 @@ def main():
     root.addHandler(handler)
     root.setLevel(level)
 
-    logging.info('############################################################')
+    logging.info('##################################################')
 
     #
     # start

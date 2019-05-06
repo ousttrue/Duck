@@ -4,7 +4,7 @@ import sys
 import os
 import asyncio
 import logging
-from typing import Union, NamedTuple, Optional, BinaryIO
+from typing import Union, NamedTuple, Optional, BinaryIO, List
 from workspacefolder import dispatcher, json_rpc, util, pipestream, http
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,20 @@ class Position(NamedTuple):
     character: int
 
 
+class Range(NamedTuple):
+    start: Position
+    end: Position
+
+
 class TextDocumentIdentifier(NamedTuple):
     uri: str
     version: Optional[int] = None
+
+
+class TextDocumentContentChangeEvent(NamedTuple):
+    text: str
+    range: Optional[Range] = None
+    rangeLength: Optional[int] = None
 
 
 class TextDocumentPositionParams(NamedTuple):
@@ -44,6 +55,11 @@ class TextDocumentPositionParams(NamedTuple):
 
 class DidOpenTextDocumentParams(NamedTuple):
     textDocument: TextDocumentItem
+
+
+class DidChangeTextDocumentParams(NamedTuple):
+    textDocument: TextDocumentIdentifier
+    contentChanges: List[TextDocumentContentChangeEvent]
 
 
 # }}}
@@ -140,13 +156,21 @@ class LanguageServer:
                                                  **util.to_dict(params))
         return await self._async_request(request)
 
-    def notify_open(self, path: pathlib.Path) -> None:
+    def notify_open(self, path: pathlib.Path, text: str) -> None:
 
         params = DidOpenTextDocumentParams(
-            TextDocumentItem(to_uri(path), 'python', 1,
-                             path.read_text(encoding='utf-8')))
+            TextDocumentItem(to_uri(path), 'python', 1, text))
 
         notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
+                                        util.to_dict(params))
+        self.stream.send_notify(notify)
+
+    def notify_change(self, path: pathlib.Path, text: str) -> None:
+        params = DidChangeTextDocumentParams(
+            TextDocumentIdentifier(to_uri(path)),
+            [TextDocumentContentChangeEvent(text)])
+
+        notify = json_rpc.JsonRPCNotify('textDocument/didChange',
                                         util.to_dict(params))
         self.stream.send_notify(notify)
 
@@ -174,11 +198,19 @@ class LanguageServerManager:
                 return self.pyls
 
     @dispatcher.rpc_method
-    async def notify_document_open(self, _path: str) -> None:
+    async def notify_document_open(self, _path: str, text: str) -> None:
         path = pathlib.Path(_path)
         ls = await self._ensure_launch(path)
         if ls:
-            ls.notify_open(path)
+            ls.notify_open(path, text)
+
+    @dispatcher.rpc_method
+    async def notify_document_change(self, _path: str, text: str) -> None:
+        path = pathlib.Path(_path)
+        ls = self._get_ls(path)
+        if ls:
+            ls.notify_change(path, text)
+            await asyncio.sleep(0)
 
     @dispatcher.rpc_method
     async def request_document_highlight(self, _path: str, line: int,
@@ -204,10 +236,14 @@ if __name__ == '__main__':
     lsm = LanguageServerManager()
 
     async def run():
-        await lsm.notify_document_open(pathlib.Path(__file__))
+        path = pathlib.Path(__file__)
+        text = path.read_text('utf-8')
+        await lsm.notify_document_open(path, text)
 
         # wait diagnostics
         await asyncio.sleep(2)
+
+        await lsm.notify_document_change(path, text)
 
         await lsm.request_document_highlight(pathlib.Path(__file__), 0, 0)
         await lsm.request_document_definition(pathlib.Path(__file__), 60, 35)

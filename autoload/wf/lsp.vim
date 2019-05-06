@@ -1,8 +1,3 @@
-function! wf#lsp#setFileType() abort
-    let l:path = expand('%:p')
-    call wf#rpc#notify('notify_document_open', l:path)
-endfunction
-
 function! s:is_null_or_empty(ret) abort
     let l:t = type(a:ret)
     if l:t==7
@@ -14,15 +9,35 @@ function! s:is_null_or_empty(ret) abort
     return 0
 endfunction
 
+function! s:get_buffer_text() abort
+    if &fileformat == 'unix'
+        let line_ending = "\n"
+    elseif &fileformat == 'dos'
+        let line_ending = "\r\n"
+    elseif &fileformat == 'mac'
+        let line_ending = "\r"
+    else
+        echoerr "unknown value for the 'fileformat' setting: " . &fileformat
+    endif
+    return join(getline(1, '$'), line_ending).line_ending
+endfunction
+
+function! wf#lsp#documentOpen() abort
+    let l:path = expand('%:p')
+    let l:text = s:get_buffer_text()
+    call wf#rpc#notify('notify_document_open', l:path, l:text)
+endfunction
+
+" goto definition {{{
 function! s:goto(ret) abort
     if s:is_null_or_empty(a:ret)
         " no result
         return
     endif
 
-    " ToDo: tagjump
     let l:pos = a:ret[0]
-    call cursor(l:pos.range.start.line+1, l:pos.range.start.character+1)
+    " echom printf("goto %s", l:pos)
+    call wf#position#goto(l:pos.uri, l:pos.range.start.line+1, l:pos.range.start.character+1)
 endfunction
 
 function! wf#lsp#gotoDefinition() abort
@@ -31,7 +46,9 @@ function! wf#lsp#gotoDefinition() abort
     let l:col = col('.')-1
     call wf#rpc#request(function('s:goto'), 'request_document_definition', l:path, l:line, l:col)
 endfunction
+" }}}
 
+" highlight {{{
 function! s:highlight(ret) abort
     if s:is_null_or_empty(a:ret)
         " no result
@@ -46,3 +63,15 @@ function! wf#lsp#highlight() abort
     let l:col = col('.')-1
     call wf#rpc#request(function('s:highlight'), 'request_document_highlight', l:path, l:line, l:col)
 endfunction
+" }}}
+
+" did change {{{
+
+function! wf#lsp#documentChange() abort
+    echom "didChange"
+    let l:path = expand('%:p')
+    let l:text = s:get_buffer_text()
+    call wf#rpc#notify('notify_document_change', l:path, l:text)
+endfunction
+
+" }}}

@@ -5,8 +5,10 @@ let g:loaded_workspacefolder = 1
 
 augroup WorkspaceFolder
     autocmd!
-    autocmd FileType * call wf#lsp#setFileType()
-    autocmd CursorMoved * call wf#lsp#highlight()
+    autocmd FileType python call wf#lsp#documentOpen()
+    autocmd CursorMoved *.py call wf#lsp#highlight()
+    autocmd TextChanged *.py call wf#lsp#documentChange()
+    autocmd InsertLeave *.py call wf#lsp#documentChange()
 augroup END
 
 " diagnostics {{{
@@ -21,7 +23,7 @@ let s:SEVERITY_HINT = 4
 
 function! s:on_diagnostics(params)
     " file:///C:/tmp/file.txt
-    let l:bufnr = bufnr('^' . a:params.uri[8:] . '$')
+    let l:bufnr = wf#buffer#bufnr(a:params.uri[8:])
     if l:bufnr == -1
         return
     endif
@@ -77,7 +79,9 @@ function! s:on_diagnostics(params)
 
     let l:winid = bufwinid(l:bufnr)
     call setloclist(l:winid, l:loclist)
+    call wf#position#save()
     lopen
+    call wf#position#restore()
 endfunction
 
 

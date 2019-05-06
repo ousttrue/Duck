@@ -1,8 +1,5 @@
-import pathlib
 import sys
 import asyncio
-import concurrent.futures
-import subprocess
 import logging
 from typing import List, BinaryIO
 from workspacefolder import http, pipestream, util
@@ -58,4 +55,3 @@ def execute(parsed):
     cmd = parsed.args[0]
     args = parsed.args[1:]
     asyncio.run(launch(cmd, args))
-
