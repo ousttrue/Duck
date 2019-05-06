@@ -84,36 +84,52 @@ https://microsoft.github.io/language-server-protocol/
 
 ### LSP
 
-* 通信ログのバッファを作る
-    msg
-        server-request
-        server-response
-        server-error
-        server-notify
-        client-request
-        client-response
-        client-error
-        client-notify
-    datetime, msg, method, params, result, error
+#### 通信ログのバッファ
 
+* ⭕️ wfとのJSON-RPC通信のログを表示
+* 🔨 終了時の破棄チェックされないようにする
+* 🔨 メッセージをフィルタリング(高頻度のhighlight)
 
-* `textDocument/didOpen`
-    * ⭕️ autocmd FileType
-* `textDocument/didChange`
-    * ⭕️ autocmd TextChanged, InsertLeave
-    * document バージョンの管理
-* `textDocument/definition`
-    * ⭕️ cursor move
-    * ⭕️ 他のファイルへのジャンプ
-    * ⭕️ jumplist
-* `textDocument/publishDiagnostics`
-    * ⭕️ receive
-    * ⭕️ location list
-    * 🔨 buffer切り替え時に復旧する
-    * 🔨 gutter
-* 🔨 `textDocument/hover` => preview
-* 🔨 `textDocument/references` => jump list
-* 🔨 `textDocument/completion` => omnifunc
-* 🔨 `textDocument/completion` => omnifunc
-* 🔨 `textDocument/rename`
+#### `textDocument/didOpen`
+
+* ⭕️ autocmd FileType
+
+#### `textDocument/didChange`
+
+* ⭕️ autocmd TextChanged, InsertLeave
+* 🔨 document バージョンの管理
+
+#### `textDocument/definition`
+
+* ⭕️ cursor move
+* ⭕️ 他のファイルへのジャンプ
+* ⭕️ jumplist
+
+#### `textDocument/publishDiagnostics`
+
+* ⭕️ receive
+* ⭕️ location list
+* 🔨 buffer切り替え時に復旧する
+* 🔨 gutter
+
+#### `textDocument/highlight`
+
+使わないので hover にすべきでは？
+
+* ⭕️ autocmd CursorMoved
+* 🔨 送り過ぎないようにする
+
+#### `textDocument/hover`
+
+* preview
+
+#### `textDocument/references`
+
+* jump list
+
+#### `textDocument/completion`
+
+* omnifunc
+
+#### `textDocument/rename`
 

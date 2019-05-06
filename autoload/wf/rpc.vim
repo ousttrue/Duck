@@ -1,6 +1,7 @@
 let s:wf = fnamemodify(expand('<sfile>'), ':h:h:h') . '/workspacefolder/__init__.py'
 let s:logfile = fnamemodify(expand('<sfile>'), ':h:h:h') . '/wfrpc.log'
 
+
 function! wf#rpc#register_notify_callback(name, callback) abort
     if !exists('s:notify_map')
         let s:notify_map = {}
@@ -97,29 +98,35 @@ function! s:on_body(body) abort
 
     if has_key(l:parsed, 'id')
         " request or response
-        if has_key(l:parsed, 'mehod')
-            echoerr "request not implemented"
+        if has_key(l:parsed, 'method')
+            call wf#logger#log(g:WF_SERVER_REQUEST, parsed)
         else
             " response
             if has_key(l:parsed, 'result')
-                "echom l:parsed.result
+                call wf#logger#log(g:WF_SERVER_RESPONSE, parsed)
+
                 let Callback = s:job_map[parsed.id]
                 call Callback(l:parsed.result)
             elseif has_key(l:parsed, 'error')
-                echoerr l:parsed.error
+                call wf#logger#log(g:WF_SERVER_ERROR, parsed)
+
             else
-                echoerr printf("invalid %s", a:body)
+                call wf#logger#log(g:WF_SERVER_ERROR, parsed)
             endif
         endif
     else
-        if exists('s:notify_map')
-            if has_key(s:notify_map, l:parsed.method)
+        if has_key(l:parsed, 'method')
+            call wf#logger#log(g:WF_SERVER_NOTIFY, parsed)
+
+            if exists('s:notify_map') && has_key(s:notify_map, l:parsed.method)
                 let Callback = s:notify_map[l:parsed.method]
                 call Callback(l:parsed.params)
-                return
+            else
+                echoerr printf("no notify callback for %s", l.parsed.method)
             endif
+        else
+            call wf#logger#log(g:WF_SERVER_ERROR, parsed)
         endif
-        echoerr printf("no notify callback for %s", l.parsed.method)
     endif
 endfunction
 
@@ -134,9 +141,12 @@ function! wf#rpc#request(callback, method, ...) abort
         \ 'id': l:request_id,
         \ 'params': a:000,
         \ }
+
     let l:data = json_encode(l:request)
     let s:job_map[l:request_id] = a:callback
     call async#job#send(l:job_id, printf("Content-Length: %d\r\n\r\n%s", len(l:data), l:data))
+
+    call wf#logger#log(g:WF_CLIENT_REQUEST, l:request)
 endfunction
 
 function! wf#rpc#notify(method, ...) abort
@@ -149,5 +159,7 @@ function! wf#rpc#notify(method, ...) abort
         \ }
     let l:data = json_encode(l:notify)
     call async#job#send(l:job_id, printf("Content-Length: %d\r\n\r\n%s", len(l:data), l:data))
+
+    call wf#logger#log(g:WF_CLIENT_NOTIFY, l:notify)
 endfunction
 

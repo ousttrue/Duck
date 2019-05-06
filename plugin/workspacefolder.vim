@@ -1,7 +1,17 @@
 if exists('g:loaded_workspacefolder')
-    "finish
+    finish
 endif
 let g:loaded_workspacefolder = 1
+
+let g:WF_SERVER_REQUEST = 'SERVER_REQUEST'
+let g:WF_SERVER_RESPONSE = 'SERVER_RESPONSE'
+let g:WF_SERVER_ERROR = 'SERVER_ERROR'
+let g:WF_SERVER_NOTIFY = 'SERVER_NOTIFY'
+let g:WF_CLIENT_REQUEST = 'CLIENT_REQUEST'
+let g:WF_CLIENT_RESPONSE = 'CLIENT_RESPONSE'
+let g:WF_CLIENT_ERROR = 'CLIENT_ERROR'
+let g:WF_CLIENT_NOTIFY = 'CLIENT_NOTIFY'
+
 
 augroup WorkspaceFolder
     autocmd!
