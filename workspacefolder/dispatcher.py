@@ -18,13 +18,15 @@ async def add(a, b):
 RPC_KEY = '_RPC_METHOD'
 
 
-def rpc_method(func, name: str = None):
-    '''
-    decorator for method marking
-    '''
-
-    setattr(func, RPC_KEY, name if name else func.__name__)
+def rpc_method(func):
+    setattr(func, RPC_KEY, func.__name__)
     return func
+
+def rpc_method_with_name(name: str):
+    def decorator(func):
+        setattr(func, RPC_KEY, name)
+        return func
+    return decorator
 
 
 class Dispatcher:

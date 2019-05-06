@@ -1,6 +1,13 @@
 let s:wf = fnamemodify(expand('<sfile>'), ':h:h:h') . '/workspacefolder/__init__.py'
 let s:logfile = fnamemodify(expand('<sfile>'), ':h:h:h') . '/wfrpc.log'
 
+function! wf#rpc#register_notify_callback(name, callback) abort
+    if !exists('s:notify_map')
+        let s:notify_map = {}
+    endif
+    let s:notify_map[a:name] = a:callback
+endfunction
+
 function! wf#rpc#start(argv) abort
     if exists('s:job_id') && s:job_id
         call wf#rpc#stop()
@@ -105,7 +112,14 @@ function! s:on_body(body) abort
             endif
         endif
     else
-        echoerr "notify not implemented"
+        if exists('s:notify_map')
+            if has_key(s:notify_map, l:parsed.method)
+                let Callback = s:notify_map[l:parsed.method]
+                call Callback(l:parsed.params)
+                return
+            endif
+        endif
+        echoerr printf("no notify callback for %s", l.parsed.method)
     endif
 endfunction
 

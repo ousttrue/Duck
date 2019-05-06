@@ -9,3 +9,9 @@ augroup WorkspaceFolder
     autocmd CursorMoved * call wf#lsp#highlight()
 augroup END
 
+function! s:on_diagnostics(diagnostics)
+    echom printf("diagnostics: %s", a:diagnostics)
+endfunction
+
+call wf#rpc#register_notify_callback('textDocument/publishDiagnostics', function('s:on_diagnostics'))
+

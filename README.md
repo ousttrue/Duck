@@ -84,10 +84,16 @@ https://microsoft.github.io/language-server-protocol/
 
 ### LSP
 
-* ⭕️ `textDocument/didOpen` => initialize
+* `textDocument/didOpen` => initialize
+    * ⭕️ aucmd FileType
 * 🔨 `textDocument/didChange` => update
-* ⭕️ `textDocument/definition` => jump
-* 🔨 `textDocument/publishDiagnostics` => gutter
+* `textDocument/definition`
+    * ⭕️ cursor move
+    * 🔨 tag jump history
+* `textDocument/publishDiagnostics`
+    * ⭕️ receive
+    * 🔨 location list
+    * 🔨 gutter
 * 🔨 `textDocument/hover` => preview
 * 🔨 `textDocument/references` => jump list
 * 🔨 `textDocument/completion` => omnifunc

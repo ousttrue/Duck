@@ -4,7 +4,7 @@ import sys
 import os
 import asyncio
 import logging
-from typing import Union, NamedTuple, Optional
+from typing import Union, NamedTuple, Optional, BinaryIO
 from workspacefolder import dispatcher, json_rpc, util, pipestream, http
 logger = logging.getLogger(__name__)
 
@@ -48,6 +48,20 @@ class DidOpenTextDocumentParams(NamedTuple):
 
 # }}}
 
+PUBLISH_DIAGNOSTICS = 'textDocument/publishDiagnostics'
+
+
+class UpstreamMethods:
+    def __init__(self, f: BinaryIO) -> None:
+        self.f = f
+
+    @dispatcher.rpc_method_with_name(PUBLISH_DIAGNOSTICS)
+    async def diagnostics(self, **kw):
+        notify = json_rpc.JsonRPCNotify(PUBLISH_DIAGNOSTICS, kw)
+        body = json.dumps(util.to_dict(notify))
+        self.f.write(
+            f'Content-Length: {len(body)}\r\n\r\n{body}'.encode('utf-8'))
+
 
 class LanguageServer:
     def __init__(self, cmd, *args):
@@ -59,6 +73,9 @@ class LanguageServer:
         asyncio.create_task(self.stream.process_stderr(self._on_error))
 
         self.dispatcher = dispatcher.Dispatcher('PipeStream')
+
+        um = UpstreamMethods(sys.stdout.buffer)
+        self.dispatcher.register_methods(um)
 
     def _on_request(self, request: http.HttpRequest) -> None:
         # async_dispatchをスケジュールする
@@ -188,6 +205,10 @@ if __name__ == '__main__':
 
     async def run():
         await lsm.notify_document_open(pathlib.Path(__file__))
+
+        # wait diagnostics
+        await asyncio.sleep(2)
+
         await lsm.request_document_highlight(pathlib.Path(__file__), 0, 0)
         await lsm.request_document_definition(pathlib.Path(__file__), 60, 35)
 
