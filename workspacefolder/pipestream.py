@@ -2,7 +2,6 @@ import json
 import asyncio
 import subprocess
 import logging
-from typing import Any, IO, Union
 from workspacefolder import http, json_rpc, util
 logger = logging.getLogger(__name__)
 
@@ -13,6 +12,7 @@ class PipeStream:
     HttpLike(StatusLine抜きの,Content-Lengthヘッダを必須とするメッセージ)な
     経路を確立する。
     '''
+
     def __init__(self, cmd, *args):
         cmdline = [cmd] + list(args)
         logger.debug('%s', cmdline)
@@ -74,4 +74,3 @@ class PipeStream:
         logger.debug('<--notify: %s', request_json)
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)
-

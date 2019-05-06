@@ -84,6 +84,18 @@ https://microsoft.github.io/language-server-protocol/
 
 ### LSP
 
+* 通信ログのバッファを作る
+    msg
+        server-request
+        server-response
+        server-error
+        server-notify
+        client-request
+        client-response
+        client-error
+        client-notify
+    datetime, msg, method, params, result, error
+
 * `textDocument/didOpen` => initialize
     * ⭕️ aucmd FileType
 * 🔨 `textDocument/didChange` => update
