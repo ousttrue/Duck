@@ -109,7 +109,7 @@ https://microsoft.github.io/language-server-protocol/
 
 * ⭕️ receive
 * ⭕️ location list
-* 🔨 buffer切り替え時に復旧する
+* ⭕️ buffer切り替え時に復旧する
 * 🔨 gutter
 
 #### `textDocument/highlight`
