@@ -12,7 +12,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 VERSION = [0, 1]
 
 
-
+if sys.platform == "win32":
+    import signal
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 def main():

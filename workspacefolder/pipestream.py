@@ -22,7 +22,7 @@ class PipeStream:
                                   stdin=subprocess.PIPE)
         self.splitter = http.HttpSplitter()
 
-    def terminate(self):
+    def shutdown(self):
         self.p.stdin.close()
         self.p.stdout.close()
         self.p.stderr.close()
