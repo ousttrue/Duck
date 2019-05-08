@@ -10,6 +10,10 @@ from . import entry
 logger = logging.getLogger(__name__)
 
 
+def get_tasks(toml):
+    if 'tasks' not in toml:
+        return []
+    return toml['tasks']
 
 
 class Duck:
@@ -21,19 +25,18 @@ class Duck:
             logger.debug(self.toml)
         self.system = system
 
-        def get_tasks(toml):
-            if 'tasks' not in toml:
-                return []
-            return toml['tasks']
-        self.tasks = {t['name']: entry.Entry(system, t) for t in get_tasks(self.toml)}
-        for k, v in self.tasks.items():
-            depends = [self.tasks[x] for x in v.depends]
-            v.depends = depends
+        self.tasks = {
+            t['name']: entry.Entry(system, t)
+            for t in get_tasks(self.toml)
+        }
+        for _, task in self.tasks.items():
+            depends = [self.tasks[x] for x in task.depends]
+            task.depends = depends
 
         self.root = []
-        for k, v in self.tasks.items():
-            if not any((v in _v.depends) for _k, _v in self.tasks.items()):
-                self.root.append(v)
+        for _, task in self.tasks.items():
+            if not any((task in _v.depends) for _k, _v in self.tasks.items()):
+                self.root.append(task)
 
     def start(self, starts: List[str]) -> None:
         if self.verbose:
@@ -78,11 +81,12 @@ def execute(parsed) -> bool:
         print()
         if duck.tasks:
             print('[task entries]')
-            def traverse(task, level = 0):
+
+            def traverse(task, level=0):
                 print(f'{"    " * level}{task}')
                 if task.depends:
-                    for d in task.depends:
-                        traverse(d, level+1)
+                    for depend in task.depends:
+                        traverse(depend, level + 1)
 
             for task in duck.root:
                 traverse(task)

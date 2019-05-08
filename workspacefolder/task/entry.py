@@ -15,7 +15,7 @@ def find_windows_cmake() -> Optional[pathlib.Path]:
 class Entry:
     def __init__(self, system, t) -> None:
         self.system = system
-        self.name = t['name'] # required
+        self.name = t['name']  # required
         self.command = t.get('command')
         self.depends = t.get('depends', [])
         self.cwd = t.get('cwd')
@@ -40,8 +40,8 @@ class Entry:
 
         # depends
         if self.depends:
-            for d in self.depends:
-                d.do_entry(basepath, level + 1)
+            for depend in self.depends:
+                depend.do_entry(basepath, level + 1)
 
         # do
         print(f'[{self.name}]')
@@ -59,11 +59,10 @@ class Entry:
             try:
                 print(f'{self.command}')
                 subprocess.run(self.command,
-                        cwd=path,
-                        encoding=self.encoding,
-                        universal_newlines=True)
+                               cwd=path,
+                               encoding=self.encoding,
+                               universal_newlines=True)
                 print()
-            except FileNotFoundError as e:
-                print(f'{self.command[0]}: {e}')
+            except FileNotFoundError as error:
+                print(f'{self.command[0]}: {error}')
                 sys.exit(1)
-
