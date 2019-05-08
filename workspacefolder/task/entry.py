@@ -21,6 +21,8 @@ class Entry:
         self.cwd = t.get('cwd')
         self.encoding = t.get('encoding')
         self.parent = None
+        self.retcode = t.get('retcode')
+        self.if_not_exists = t.get('if_not_exists')
 
     def __str__(self):
         return f'<{self.name}>'
@@ -44,6 +46,10 @@ class Entry:
                 depend.do_entry(basepath, level + 1)
 
         # do
+        if self.if_not_exists:
+            if (basepath / self.if_not_exists).exists:
+                return
+
         print(f'[{self.name}]')
         if self.command:
             path = basepath
@@ -56,13 +62,25 @@ class Entry:
 
             self.prepare_command()
 
+            print(f'{self.command}')
+            p = subprocess.Popen(self.command,
+                           cwd=path,
+                           encoding=self.encoding,
+                           universal_newlines=True)
             try:
-                print(f'{self.command}')
-                subprocess.run(self.command,
-                               cwd=path,
-                               encoding=self.encoding,
-                               universal_newlines=True)
+                ret = p.wait()
+                print(f'ret = {ret}')
+                if not self.retcode:
+                    if ret!=0:
+                        sys.exit(ret)
                 print()
+
             except FileNotFoundError as error:
                 print(f'{self.command[0]}: {error}')
                 sys.exit(1)
+
+            finally:
+                if p.returncode is not None:
+                    print('kill')
+                    p.kill()
+
