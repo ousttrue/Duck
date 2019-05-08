@@ -1,4 +1,4 @@
-let s:wf = fnamemodify(expand('<sfile>'), ':h:h:h') . '/workspacefolder/__init__.py'
+let s:wf = fnamemodify(expand('<sfile>'), ':h:h:h') . '/main.py'
 let s:logfile = fnamemodify(expand('<sfile>'), ':h:h:h') . '/wfrpc.log'
 
 

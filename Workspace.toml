@@ -1,6 +1,6 @@
 default = 'test'
 
-[[task]]
+[[tasks]]
 name = 'test'
 command = ['python', 'setup.py', 'test']
 

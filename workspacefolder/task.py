@@ -3,8 +3,10 @@ import subprocess
 import platform
 import pathlib
 import argparse
-from typing import List, Any, Optional
+from typing import List, Any, Optional, NamedTuple
 import toml
+import logging
+logger = logging.getLogger(__name__)
 
 
 def find_windows_cmake() -> Optional[pathlib.Path]:
@@ -15,100 +17,90 @@ def find_windows_cmake() -> Optional[pathlib.Path]:
     return None
 
 
-class Duck:
-    '''
-    Task runner. 元のツール名がDuckだった名残
-    '''
-    def __init__(self, path: pathlib.Path, verbose: bool, system: str) -> None:
-        self.path = path
-        self.toml = toml.load(path)
-        self.verbose = False
-        if '@verbose' in self.toml:
-            self.verbose = self.toml['@verbose']
-        if verbose:
-            self.verbose = True
-        if self.verbose:
-            print(self.toml)
-            print()
-        self.system = system
+class Task:
+    def __init__(self, t) -> None:
+        self.name = t['name'] # required
+        self.command = t.get('command')
+        self.depends = t.get('depends', [])
+        self.cwd = t.get('cwd')
+        self.encoding = t.get('encoding')
+        self.parent = None
 
-    def get_command(self, entry: Any) -> Optional[List[str]]:
-        command = entry.get('command')
-        if not command:
-            return None
-        if isinstance(command, dict):
-            command = command[self.system]
-        return command
+    def __str__(self):
+        return f'<{self.name}>'
 
-    def prepare_command(self, command: List[str]) -> None:
-        if command[0] == '::cmake::':
+    def prepare_command(self) -> None:
+        if self.command[0] == '::cmake::':
             if self.system == 'windows':
                 cmake = find_windows_cmake()
                 if cmake:
                     command[0] = str(cmake)
                     return
 
-            command[0] = 'cmake'
+            self.command[0] = 'cmake'
+
+    def do_entry(self, basepath: pathlib.Path, level=0) -> None:
+        indent = '  ' * level
+
+        # depends
+        if self.depends:
+            for d in self.depends:
+                d.do_entry(basepath, level + 1)
+
+        # do
+        print(f'[{self.name}]')
+        if self.command:
+            path = basepath
+            if self.cwd:
+                # relative from Duck.toml file
+                path = basepath / self.cwd
+                if not path.exists():
+                    path.mkdir(parents=True, exist_ok=True)
+            print(f'cwd: {path}')
+
+            self.prepare_command()
+
+            try:
+                print(f'{self.command}')
+                subprocess.run(self.command,
+                        cwd=path,
+                        encoding=self.encoding,
+                        universal_newlines=True)
+                print()
+            except FileNotFoundError as e:
+                print(f'{command[0]}: {e}')
+                sys.exit(1)
+
+
+class Duck:
+    def __init__(self, path: pathlib.Path, verbose: bool, system: str) -> None:
+        self.path = path
+        self.toml = toml.load(path)
+        self.verbose = verbose
+        if self.verbose:
+            logger.debug(self.toml)
+        self.system = system
+
+        def get_tasks(toml):
+            if 'tasks' not in toml:
+                return []
+            return toml['tasks']
+        self.tasks = {t['name']: Task(t) for t in get_tasks(self.toml)}
+        for k, v in self.tasks.items():
+            depends = [self.tasks[x] for x in v.depends]
+            v.depends = depends
+
+        self.root = []
+        for k, v in self.tasks.items():
+            if not any((v in _v.depends) for _k, _v in self.tasks.items()):
+                self.root.append(v)
 
     def start(self, starts: List[str]) -> None:
         if self.verbose:
             print(starts)
 
         for key in starts:
-            self.do_entry(key)
-
-    def print_entries(self):
-        if not self.toml:
-            return
-
-        print('[entries]')
-        for k, v in self.toml.items():
-            print(k)
-
-    def do_entry(self, key: str, level=0) -> None:
-        indent = '  ' * level
-        if self.verbose:
-            print(f'{indent}[{key}]')
-
-        # if exists ?
-        entry = self.toml.get(key)
-        if not entry:
-            raise KeyError(f'{key} not in {self.toml.keys()}')
-
-        # depends
-        depends = entry.get('depends')
-        if depends:
-            for d in depends:
-                self.do_entry(d, level + 1)
-
-        # do
-        if self.verbose:
-            print(f'{indent}{entry}')
-
-        cwd = entry.get('cwd')
-        command = self.get_command(entry)
-        if command:
-            path = self.path.parent
-            if cwd:
-                # relative from Duck.toml file
-                path = path / cwd
-                if not path.exists():
-                    path.mkdir(parents=True, exist_ok=True)
-            if self.verbose:
-                print(f'{indent}{path}')
-
-            self.prepare_command(command)
-
-            encoding = entry.get('encoding')
-
-            try:
-                subprocess.run(command,
-                               cwd=path,
-                               encoding=encoding,
-                               universal_newlines=True)
-            except FileNotFoundError as e:
-                print(f'{command[0]}: {e}')
-                sys.exit(1)
+            self.tasks[key].do_entry(self.path.parent)
 
 
 def find_toml(current: pathlib.Path, verbose: bool) -> Optional[pathlib.Path]:
@@ -131,17 +123,27 @@ def execute(parsed) -> bool:
     here = pathlib.Path('.').resolve()
     duck_file = find_toml(here, parsed.debug)
     if not duck_file:
-        logger.error('Workspace.toml not found')
+        print('[Workspace.toml]')
+        print('not found')
+        print()
         return False
 
     duck = Duck(duck_file, parsed.debug, platform.system().lower())
 
-    # if parsed.starts:
-    #     parser.print_help()
-    #     print()
-    #     duck.print_entries()
-    #     sys.exit()
-    #
-    # duck.start(parsed.starts)
-    return True
+    if parsed.args:
+        duck.start(parsed.args)
+    else:
+        print('[Workspace.toml]')
+        print(duck_file.resolve())
+        print()
+        if duck.tasks:
+            print('[task entries]')
+            def traverse(task, level = 0):
+                print(f'{"    " * level}{task}')
+                if task.depends:
+                    for d in task.depends:
+                        traverse(d, level+1)
 
+            for task in duck.root:
+                traverse(task)
+    return True

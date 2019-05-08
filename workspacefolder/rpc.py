@@ -50,6 +50,10 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
         if request:
             asyncio.create_task(async_dispatch(dispatcher, request, w))
 
+def setup_parser(parser):
+    parser.add_argument('--rpc',
+                        action='store_true',
+                        help='''enable rpc in stdinout''')
 
 def execute(parsed):
     logging.info('##################################################')

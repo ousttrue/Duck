@@ -51,6 +51,10 @@ async def launch(cmd: str, args: List[str]):
     await process_stdin(sys.stdin.buffer, ps.p.stdin)
 
 
+def setup_parser(parser):
+    parser.add_argument('--wrap', action='store_true')
+
+
 def execute(parsed):
     cmd = parsed.args[0]
     args = parsed.args[1:]

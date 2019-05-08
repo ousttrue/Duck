@@ -37,21 +37,16 @@ def setup_logger(debug: bool, logfile: str) -> None:
 
 
 def main():
-
     # parser setup
     parser = argparse.ArgumentParser(description='WorkspaceFolder tool.')
     parser.add_argument('--logfile', type=str, help='''cmd logfile''')
     parser.add_argument('--debug',
-                        action='store_true',
-                        help='''enable debug switch''')
-
-    parser.add_argument('--rpc',
-                        action='store_true',
-                        help='''enable rpc in stdinout''')
-
-    parser.add_argument('--wrap', action='store_true')
-
+            action='store_true',
+            help='''enable debug switch''')
     parser.add_argument('args', nargs='*')
+
+    rpc.setup_parser(parser)
+    wrap.setup_parser(parser)
 
     # parse
     parsed = parser.parse_args()

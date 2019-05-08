@@ -1,0 +1,20 @@
+[[tasks]]
+name = 'clone'
+command = ['git', 'clone', 'https://github.com/neovim/neovim.git']
+
+[[tasks]]
+name = 'deps_cmake'
+depends = ['clone']
+cwd = 'neovim/deps'
+command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
+
+[[tasks]]
+name = 'deps_build'
+depends = ['deps_cmake']
+cwd = 'neovim/deps'
+command =['msbuild', 'NVIM_DEPS.sln', '/p:Platform=x64', '/p:Configuration=Release']
+
+[[tasks]]
+name = 'build'
+depends = ['deps_build']
+
