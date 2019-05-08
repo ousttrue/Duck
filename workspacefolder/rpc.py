@@ -52,6 +52,8 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
 
 
 def execute(parsed):
+    logging.info('##################################################')
+
     d = dispatcher.Dispatcher(b'RPC')
 
     lspi = lsp.LspInterface()

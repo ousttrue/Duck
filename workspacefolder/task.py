@@ -16,6 +16,9 @@ def find_windows_cmake() -> Optional[pathlib.Path]:
 
 
 class Duck:
+    '''
+    Task runner. 元のツール名がDuckだった名残
+    '''
     def __init__(self, path: pathlib.Path, verbose: bool, system: str) -> None:
         self.path = path
         self.toml = toml.load(path)
@@ -113,44 +116,32 @@ def find_toml(current: pathlib.Path, verbose: bool) -> Optional[pathlib.Path]:
     while True:
         if verbose:
             print(current)
-        duck_file = current / 'Duck.toml'
+        duck_file = current / 'Workspace.toml'
         if duck_file.exists():
             return duck_file
 
         if current == current.parent:
-            print('Duck.toml not found')
+            print('Workspace.toml not found')
             return None
         current = current.parent
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='a tool like make using TOML.')
-
-    parser.add_argument('starts', type=str, nargs='*', help='start entries')
-
-    parser.add_argument('--verbose', '-v', action='store_true')
-
-    args = parser.parse_args()
-    if args.verbose:
-        print(args)
-
-    # find Duck.toml
+def execute(parsed) -> bool:
+    # find Workspace.toml
     here = pathlib.Path('.').resolve()
-    duck_file = find_toml(here, args.verbose)
+    duck_file = find_toml(here, parsed.debug)
     if not duck_file:
-        return
+        logger.error('Workspace.toml not found')
+        return False
 
-    duck = Duck(duck_file, args.verbose, platform.system().lower())
+    duck = Duck(duck_file, parsed.debug, platform.system().lower())
 
-    if not args.starts:
-        parser.print_help()
-        print()
-        duck.print_entries()
-        sys.exit()
+    # if parsed.starts:
+    #     parser.print_help()
+    #     print()
+    #     duck.print_entries()
+    #     sys.exit()
+    #
+    # duck.start(parsed.starts)
+    return True
 
-    duck.start(args.starts)
-
-
-if __name__ == '__main__':
-    main()

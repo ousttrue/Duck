@@ -2,19 +2,38 @@ import logging
 import sys
 import argparse
 import pathlib
-from workspacefolder import rpc, wrap
+from . import rpc, wrap, task
 
-# logging.lastResort = logging.NullHandler()
 logger = logging.getLogger(__name__)
 
-HERE = pathlib.Path(__file__).resolve().parent
-
 VERSION = [0, 1]
-
 
 if sys.platform == "win32":
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+
+def setup_logger(debug: bool, logfile: str) -> None:
+    level = logging.INFO
+    if debug:
+        level = logging.DEBUG
+    else:
+        # clear output
+        logging.lastResort = logging.NullHandler()
+
+    if logfile:
+        handler = logging.FileHandler(logfile, encoding='utf-8')
+    else:
+        handler = logging.StreamHandler(sys.stderr)
+
+    fmt = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
+    f = logging.Formatter(fmt, '%H:%M:%S')
+    handler.setLevel(level)
+    handler.setFormatter(f)
+
+    root = logging.getLogger()
+    root.addHandler(handler)
+    root.setLevel(level)
 
 
 def main():
@@ -30,39 +49,16 @@ def main():
                         action='store_true',
                         help='''enable rpc in stdinout''')
 
-    parser.add_argument('--wrap',
-                        action='store_true')
+    parser.add_argument('--wrap', action='store_true')
 
     parser.add_argument('args', nargs='*')
 
     # parse
     parsed = parser.parse_args()
 
-    # clear output
-    # logging.lastResort = logging.NullHandler()
-    level = logging.INFO
-    if parsed.debug:
-        level = logging.DEBUG
+    setup_logger(parsed.debug, parsed.logfile)
 
-    if parsed.logfile:
-        handler = logging.FileHandler(parsed.logfile, encoding='utf-8')
-    else:
-        handler = logging.StreamHandler(sys.stderr)
-
-    fmt = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
-    f = logging.Formatter(fmt, '%H:%M:%S')
-    handler.setLevel(level)
-    handler.setFormatter(f)
-
-    root = logging.getLogger()
-    root.addHandler(handler)
-    root.setLevel(level)
-
-    logging.info('##################################################')
-
-    #
     # start
-    #
     try:
         if parsed.rpc:
             # start stdin reader
@@ -72,11 +68,9 @@ def main():
             wrap.execute(parsed)
         else:
             # execute tasks
-            pass
+            if not task.execute(parsed):
+                parser.print_help()
 
     finally:
         logging.shutdown()
 
-
-if __name__ == '__main__':
-    main()

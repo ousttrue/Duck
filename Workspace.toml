@@ -1,22 +1,6 @@
-# sample file
+default = 'test'
 
-# entries
-[chcd]
-cwd = "tmp"
-command.linux = ["pwd"]
-command.windows = ["cmd", "/c", "cd"]
-
-[rmdir]
-depends = ["chcd"]
-command.linux = ["rmdir", "tmp"]
-command.windows = ["cmd", "/c", "rmdir", "tmp"]
-
-[duck]
-command.linux = ["echo", "🐣🐣🐣"]
-command.windows = ["cmd", "/c", "echo", "ooo"]
-
-[run]
-depends = ["duck", "rmdir"]
-command.linux = ["echo", "hello 🦆"]
-command.windows = ["cmd", "/c", "echo", "hello hello"]
+[[task]]
+name = 'test'
+command = ['python', 'setup.py', 'test']
 
