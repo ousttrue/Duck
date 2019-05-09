@@ -2,14 +2,7 @@ import subprocess
 import sys
 import pathlib
 from typing import Optional
-
-
-def find_windows_cmake() -> Optional[pathlib.Path]:
-    cmake = pathlib.Path("C:/Program Files/CMake/bin/cmake.exe")
-    if cmake.exists():
-        return cmake
-
-    return None
+from . import windows_tool_search
 
 
 class Entry:
@@ -28,9 +21,9 @@ class Entry:
         return f'<{self.name}>'
 
     def prepare_command(self) -> None:
-        if self.command[0] == '::cmake::':
+        if self.command[0] == 'cmake':
             if self.system == 'windows':
-                cmake = find_windows_cmake()
+                cmake = windows_tool_search.find_cmake()
                 if cmake:
                     self.command[0] = str(cmake)
                     return
@@ -47,7 +40,7 @@ class Entry:
 
         # do
         if self.if_not_exists:
-            if (basepath / self.if_not_exists).exists:
+            if (basepath / self.if_not_exists).exists():
                 return
 
         print(f'[{self.name}]')
@@ -62,12 +55,13 @@ class Entry:
 
             self.prepare_command()
 
-            print(f'{self.command}')
-            p = subprocess.Popen(self.command,
-                           cwd=path,
-                           encoding=self.encoding,
-                           universal_newlines=True)
+            print('# ' + ' '.join(self.command))
+            p = None
             try:
+                p = subprocess.Popen(self.command,
+                               cwd=path,
+                               encoding=self.encoding,
+                               universal_newlines=True)
                 ret = p.wait()
                 print(f'ret = {ret}')
                 if not self.retcode:
@@ -76,11 +70,11 @@ class Entry:
                 print()
 
             except FileNotFoundError as error:
-                print(f'{self.command[0]}: {error}')
+                print(f'{error}: {self.command[0]}')
                 sys.exit(1)
 
             finally:
-                if p.returncode is not None:
+                if p and p.returncode is None:
                     print('kill')
                     p.kill()
 

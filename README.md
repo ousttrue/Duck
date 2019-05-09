@@ -21,15 +21,29 @@ https://microsoft.github.io/debug-adapter-protocol/overview
 
 ### Task実行
 
-#### Build
-* make, dub, MSBuild 等の呼び出し代行。
-* レジストリ経由でcmake, MSBuild 等を発見する能力。vswhere。
+* ⭕️ レジストリ経由でcmake, MSBuild 等を発見する能力。vswhere。
+* タスクの実行
+    * ⭕️ make, dub, MSBuild 等の呼び出し代行。
+    * ⭕️ cmake, premake。プロジェクトやソリューション、Makefileの生成。
+    * ⭕️ タスクの依存関係
+* 🔨 vsvars.bat から環境変数を取り込む
+* 🔨 実行時の環境変数のコントロール
+* ⭕️ mingwのtoolchain選択
+* ⭕️ 実行ログ
 
-#### MetaBuild
+task定義
 
-* cmake, premake。プロジェクトやソリューション、Makefileの生成。
-* コーディングの一部は、これの影響を受ける(Includeパスや、csのプロジェクト参照など)
-* 事前の環境整備。npm installなど。
+* [Workspace.toml](./neovim/Workspace.toml)
+
+```toml
+# Workspace.toml
+
+[[tasks]]
+name = 'deps_cmake'
+depends = ['clone']
+cwd = 'neovim/.deps'
+command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
+```
 
 ### Language Server の起動
 
