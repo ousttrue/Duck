@@ -23,10 +23,10 @@ function! s:get_buffer_text() abort
     return join(getline(1, '$'), line_ending).line_ending
 endfunction
 
-function! wf#lsp#documentOpen() abort
+function! ws#lsp#documentOpen() abort
     let l:path = expand('%:p')
     let l:text = s:get_buffer_text()
-    call wf#rpc#notify('notify_document_open', l:path, l:text)
+    call ws#rpc#notify('notify_document_open', l:path, l:text)
 endfunction
 
 " goto definition {{{
@@ -38,14 +38,14 @@ function! s:goto(ret) abort
 
     let l:pos = a:ret[0]
     " echom printf("goto %s", l:pos)
-    call wf#position#goto(l:pos.uri, l:pos.range.start.line+1, l:pos.range.start.character+1)
+    call ws#position#goto(l:pos.uri, l:pos.range.start.line+1, l:pos.range.start.character+1)
 endfunction
 
-function! wf#lsp#gotoDefinition() abort
+function! ws#lsp#gotoDefinition() abort
     let l:path = expand('%:p')
     let l:line = line('.')-1
     let l:col = col('.')-1
-    call wf#rpc#request(function('s:goto'), 'request_document_definition', l:path, l:line, l:col)
+    call ws#rpc#request(function('s:goto'), 'request_document_definition', l:path, l:line, l:col)
 endfunction
 " }}}
 
@@ -58,21 +58,21 @@ function! s:highlight(ret) abort
     "echo printf("highlight: %s", a:ret)
 endfunction
 
-function! wf#lsp#highlight() abort
+function! ws#lsp#highlight() abort
     let l:path = expand('%:p')
     let l:line = line('.')-1
     let l:col = col('.')-1
-    call wf#rpc#request(function('s:highlight'), 'request_document_highlight', l:path, l:line, l:col)
+    call ws#rpc#request(function('s:highlight'), 'request_document_highlight', l:path, l:line, l:col)
 endfunction
 " }}}
 
 " did change {{{
 
-function! wf#lsp#documentChange() abort
+function! ws#lsp#documentChange() abort
     echom "didChange"
     let l:path = expand('%:p')
     let l:text = s:get_buffer_text()
-    call wf#rpc#notify('notify_document_change', l:path, l:text)
+    call ws#rpc#notify('notify_document_change', l:path, l:text)
 endfunction
 
 " }}}

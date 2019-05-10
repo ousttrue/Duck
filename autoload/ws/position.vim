@@ -1,14 +1,14 @@
-function! wf#position#save()
+function! ws#position#save()
     let s:wid = win_getid()
     let s:pos = getcurpos()
 endfunction
 
-function! wf#position#restore()
+function! ws#position#restore()
     call win_gotoid(s:wid)
     call setpos('.', s:pos)
 endfunction
 
-function! wf#position#goto(uri, line, col)
+function! ws#position#goto(uri, line, col)
     let l:path = a:uri[8:]
     let l:bufnr = bufnr(l:path)
     if l:bufnr == -1

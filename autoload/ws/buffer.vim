@@ -1,4 +1,4 @@
-function! wf#buffer#bufnr(path) abort
+function! ws#buffer#bufnr(path) abort
     let l:nr = bufnr(a:path)
     if l:nr!=-1
         return l:nr
@@ -8,15 +8,15 @@ function! wf#buffer#bufnr(path) abort
 endfunction
 
 " 指定の名前のバッファを得て編集可能にし・・・
-function! wf#buffer#begin(name) abort
+function! ws#buffer#begin(name) abort
     let l:current = bufnr('%')
-    call wf#buffer#get_or_create(a:name)
+    call ws#buffer#get_or_create(a:name)
     setlocal buflisted modifiable noreadonly
     return l:current
 endfunction
 
 " 編集不可にして元のアクティブバッファを復旧する
-function! wf#buffer#end(current) abort
+function! ws#buffer#end(current) abort
     setlocal nobuflisted nomodifiable readonly
     execute printf("b%d", a:current)
 endfunction
@@ -24,7 +24,7 @@ endfunction
 "
 " カレントバッファが空か調べる
 "
-function! wf#buffer#is_empty() abort
+function! ws#buffer#is_empty() abort
     let l:lines = getline(1, '$')
     if len(l:lines)>1
         return 0
@@ -85,7 +85,7 @@ endfunction
 
 " 指定の名前のbufferがあればそれをアクティブにする。
 " 無ければ新規に作成し、それがアクティブになる。
-function! wf#buffer#get_or_create(name) abort
+function! ws#buffer#get_or_create(name) abort
     let l:nr = bufnr(a:name)
     if bufexists(l:nr)
         echom printf('%d: get %s', l:nr, a:name)

@@ -13,7 +13,7 @@ let s:SEVERITY_HINT = 4
 
 
 " カレントバッファに対するdiagnosticsリストをLocationListに投入する
-function! wf#lsp#diagnostics#updateLocList()
+function! ws#lsp#diagnostics#updateLocList()
     let l:path = fnamemodify(expand("%"), ":p")
     let l:path = substitute(l:path, "\\", "/", "g")
     let l:bufnr = bufnr("%")
@@ -39,14 +39,14 @@ function! wf#lsp#diagnostics#updateLocList()
     call setloclist(l:winid, l:loclist)
 
     if len(l:loclist)>0
-        call wf#position#save()
+        call ws#position#save()
         lopen
-        call wf#position#restore()
+        call ws#position#restore()
         "ll 1
     endif
 endfunction
 
-function! wf#lsp#diagnostics#receive(params)
+function! ws#lsp#diagnostics#receive(params)
     " file:///C:/tmp/file.txt
     let l:path = a:params.uri[8:]
 
@@ -101,7 +101,7 @@ function! wf#lsp#diagnostics#receive(params)
 
     "echo printf("notify: %s %d items", l:path, len(l:loclist))
     if mode() == 'n'
-        call wf#lsp#diagnostics#updateLocList()
+        call ws#lsp#diagnostics#updateLocList()
     endif
 
 endfunction
