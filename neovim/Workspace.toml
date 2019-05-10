@@ -6,8 +6,9 @@ command = ['git', 'clone', 'https://github.com/neovim/neovim.git']
 [[tasks]]
 name = 'deps_cmake'
 depends = ['clone']
-cwd = 'neovim/.deps'
-command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
+#cwd = 'neovim/.deps'
+#command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
+command = ['cmake', '-S', 'third-party', '-B', '.deps', '-G', 'Visual Studio 16 2019', '-A', 'x64']
 
 [[tasks]]
 name = 'deps_build'
@@ -18,14 +19,15 @@ command =['msbuild', 'NVIM_DEPS.sln', '/p:Platform=x64', '/p:Configuration=Relea
 [[tasks]]
 name = 'bin_cmake'
 depends = ['clone']
-cwd = 'neovim/build'
-command = ['cmake', '..', '-G', 'Visual Studio 15 2017 Win64']
+#cwd = 'neovim/build'
+#command = ['cmake', '..', '-G', 'Visual Studio 15 2017 Win64']
+command = ['cmake', '-S', '.', '-B', 'build', '-G', 'Visual Studio 16 2019', '-A', 'x64']
 
 [[tasks]]
 name = 'bin_build'
 depends = ['bin_cmake']
 cwd = 'neovim/build'
-command =['msbuild', 'nvim.sln', '/p:Platform=x64', '/p:Configuration=Release', '/maxcpucount']
+command =['msbuild', 'src/nvim/nvim.vcxproj', '/p:Platform=x64', '/p:Configuration=Release']
 
 [[tasks]]
 name = 'build'
