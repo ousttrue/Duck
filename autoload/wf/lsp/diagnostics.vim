@@ -42,7 +42,7 @@ function! wf#lsp#diagnostics#updateLocList()
         call wf#position#save()
         lopen
         call wf#position#restore()
-        ll 1
+        "ll 1
     endif
 endfunction
 

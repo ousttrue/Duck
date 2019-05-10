@@ -4,8 +4,8 @@ import sys
 import os
 import asyncio
 import logging
-from typing import Union, NamedTuple, Optional, BinaryIO, List, Any
-from workspacefolder import dispatcher, json_rpc, util, pipestream, http
+from typing import Union, NamedTuple, Optional, BinaryIO, List, Any, Dict
+from workspacefolder import dispatcher, json_rpc, util, pipestream
 logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
@@ -147,7 +147,8 @@ class LanguageServer:
         notify = json_rpc.JsonRPCNotify('initialized', {})
         self.stream.send_notify(notify)
 
-    def notify_document_open(self, version: int, path: pathlib.Path, text: str) -> None:
+    def notify_document_open(self, version: int, path: pathlib.Path,
+                             text: str) -> None:
 
         params = DidOpenTextDocumentParams(
             TextDocumentItem(to_uri(path), 'python', version, text))
@@ -157,7 +158,7 @@ class LanguageServer:
         self.stream.send_notify(notify)
 
     def notify_document_change(self, version: int, path: pathlib.Path,
-                      text: str) -> None:
+                               text: str) -> None:
         params = DidChangeTextDocumentParams(
             TextDocumentIdentifier(to_uri(path), version),
             [TextDocumentContentChangeEvent(text)])
@@ -172,10 +173,21 @@ class WorkspaceInfo(NamedTuple):
     language: str
 
 
-def get_workspace_info(path: pathlib.Path) -> WorkspaceInfo:
+def get_python_root(path: pathlib.Path) -> pathlib.Path:
+    current = path.parent
+    while True:
+        if any(f.name == 'setup.py' for f in current.iterdir()):
+            return current
+
+        if current == current.parent:
+            break
+        current = current.parent
+    return path
+
+
+def get_workspace_info(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     if path.suffix == '.py':
-        # ToDo: detect project root
-        return WorkspaceInfo(path.parent, 'python')
+        return WorkspaceInfo(get_python_root(path.parent), 'python')
 
     logger.warn('not implemented: %s', path)
     return None
@@ -185,7 +197,7 @@ def create_ls(language: str) -> LanguageServer:
     if language == 'python':
         return LanguageServer('pyls')
 
-    raise NotImplemented(language)
+    raise NotImplementedError(language)
 
 
 class Workspace:
@@ -322,5 +334,3 @@ class LspInterface:
         document = self._get_or_create_document(path)
         if document:
             return await document.async_definition(line, col)
-
-
