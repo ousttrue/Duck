@@ -86,8 +86,7 @@ https://microsoft.github.io/language-server-protocol/
 
 ### task
 
-* 🔨 Workspace.toml に記述されたtaskを実行する。
-* 🔨 実行時の cwd を調整する。
+* ⭕️ Workspace.toml に記述されたtaskを実行する。
 * 🔨 Workspace.toml に引数無し実行の記述を作る。
 
 ## vimplugin
@@ -101,8 +100,6 @@ https://microsoft.github.io/language-server-protocol/
 #### 通信ログのバッファ
 
 * ⭕️ wfとのJSON-RPC通信のログを表示
-* 🔨 終了時の破棄チェックされないようにする
-* 🔨 メッセージをフィルタリング(高頻度のhighlight)
 
 #### `textDocument/didOpen`
 
@@ -111,7 +108,7 @@ https://microsoft.github.io/language-server-protocol/
 #### `textDocument/didChange`
 
 * ⭕️ autocmd TextChanged, InsertLeave
-* 🔨 document バージョンの管理
+* ⭕️ document バージョンをincrement
 
 #### `textDocument/definition`
 
@@ -128,22 +125,17 @@ https://microsoft.github.io/language-server-protocol/
 
 #### `textDocument/highlight`
 
-使わないので hover にすべきでは？
-
-* ⭕️ autocmd CursorMoved
-* 🔨 送り過ぎないようにする
-
 #### `textDocument/hover`
 
 * preview
 
 #### `textDocument/references`
 
-* jump list
+* 🔨 jump list
 
 #### `textDocument/completion`
 
-* omnifunc
+* 🔨 omnifunc
 
 #### `textDocument/rename`
 
