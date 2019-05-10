@@ -1,7 +1,6 @@
 import logging
 import sys
 import argparse
-import pathlib
 from . import rpc, wrap, task
 
 logger = logging.getLogger(__name__)

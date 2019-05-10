@@ -6,6 +6,7 @@ function! s:is_null_or_empty(ret) abort
     if l:t==3
         return len(a:ret)==0
     endif
+    echom printf("%s",a:ret)
     return 0
 endfunction
 

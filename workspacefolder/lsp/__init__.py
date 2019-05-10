@@ -296,7 +296,7 @@ class LspInterface:
     @dispatcher.rpc_method
     async def notify_document_open(self, _path: str, text: str) -> None:
         path = pathlib.Path(_path)
-        document = self._get_or_create_document(path)
+        document = self._get_or_create_document(path, text)
         if document:
             await document.ws.async_initialized
 
