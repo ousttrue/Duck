@@ -30,9 +30,8 @@ class JsonRPCNotify(NamedTuple):
 
 
 def parse(
-        src: bytes
+        rpc
 ) -> Union[JsonRPCRequest, JsonRPCResponse, JsonRPCError, JsonRPCNotify]:
-    rpc = json.loads(src)
 
     if rpc['jsonrpc'] != '2.0':
         raise ValueError('jsonrpc is not 2.0')

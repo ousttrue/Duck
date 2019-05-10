@@ -92,9 +92,9 @@ class LanguageServer:
         um = UpstreamMethods(sys.stdout.buffer)
         self.dispatcher.register_methods(um)
 
-    def _on_request(self, request: http.HttpRequest) -> None:
+    def _on_request(self, rpc) -> None:
         # async_dispatchをスケジュールする
-        asyncio.create_task(self.dispatcher.async_dispatch(request.body))
+        asyncio.create_task(self.dispatcher.async_dispatch(rpc))
 
     def _on_error(self, line: bytes) -> None:
         # logging
@@ -111,7 +111,6 @@ class LanguageServer:
         '''
         self.stream.send_request(request)
         result = await self.dispatcher.wait_request(request)
-        logger.debug('%d->%s', request.id, json.dumps(result, indent=2))
         return result
 
     async def async_initialize(
@@ -325,33 +324,3 @@ class LspInterface:
             return await document.async_definition(line, col)
 
 
-# debug {{{
-if __name__ == '__main__':
-    f = '%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
-    logging.basicConfig(level=logging.DEBUG, datefmt='%H:%M:%S', format=f)
-    lspi = LspInterface()
-
-    async def run():
-        path = pathlib.Path(__file__)
-        text = path.read_text('utf-8')
-
-        # ws = Workspace(path.parent, 'python')
-        # await ws.async_initialized
-        #
-        # documen = Document(path, ws, text)
-
-        await lspi.notify_document_open(path, text)
-
-        # wait diagnostics
-        await asyncio.sleep(2)
-
-        await lspi.request_document_highlight(pathlib.Path(__file__), 0, 0)
-        await lspi.request_document_definition(pathlib.Path(__file__), 0, 0)
-
-        await lspi.notify_document_change(path, text)
-
-        lspi.shutdown()
-        logger.debug('done')
-
-    asyncio.run(run())
-# }}}

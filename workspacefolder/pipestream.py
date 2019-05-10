@@ -41,7 +41,13 @@ class PipeStream:
             # split to http like message
             request = self.splitter.push(b[0])
             if request:
-                on_request(request)
+                body = request.body
+                rpc = json.loads(body)
+                if 'id' in rpc:
+                    logger.debug('%d->%s', rpc['id'], rpc)
+                else:
+                    logger.debug('-->%s', rpc)
+                on_request(rpc)
 
     async def process_stderr(self, on_error):
         r = self.p.stderr
@@ -64,13 +70,13 @@ class PipeStream:
     def send_request(self, request: json_rpc.JsonRPCRequest):
         d = util.to_dict(request)
         request_json = json.dumps(d, indent=2)
-        logger.debug('<--request: %s', request_json)
+        logger.debug('<-%d%s', request.id, request_json)
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)
 
     def send_notify(self, notify: json_rpc.JsonRPCNotify):
         d = util.to_dict(notify)
         request_json = json.dumps(d, indent=2)
-        logger.debug('<--notify: %s', request_json)
+        logger.debug('<--%s', request_json)
         request_bytes = request_json.encode('utf-8')
         self._send_body(request_bytes)

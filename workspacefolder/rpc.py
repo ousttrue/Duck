@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 async def async_dispatch(dispatcher, request, w):
-    body = await dispatcher.async_dispatch(request.body)
+    rpc = json.loads(request.body)
+    body = await dispatcher.async_dispatch(rpc)
     if body:
         bio = io.BytesIO()
         bio.write(b'Content-Length: ')

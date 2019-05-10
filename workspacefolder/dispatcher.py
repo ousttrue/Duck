@@ -1,7 +1,7 @@
 import asyncio
 from typing import Dict, Any, Optional, Union
-
 import logging
+
 from workspacefolder import json_rpc
 logger = logging.getLogger(__name__)
 
@@ -79,14 +79,14 @@ class Dispatcher:
         fut = self.request_map[request.id]
         return await fut
 
-    async def async_dispatch(self, body: bytes) -> Optional[bytes]:
+    async def async_dispatch(self, rpc) -> Optional[bytes]:
         '''
         json_rpcメッセージを処理し、
             * メッセージがRequestだった場合
             * エラーメッセージがある場合
         結果を返す。
         '''
-        message = json_rpc.parse(body)
+        message = json_rpc.parse(rpc)
 
         if isinstance(message, json_rpc.JsonRPCRequest):
             callback = self.method_map.get(message.method)
