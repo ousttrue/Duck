@@ -99,5 +99,9 @@ function! wf#lsp#diagnostics#receive(params)
 
     let s:diagnostics_map[l:path] = l:loclist
 
-    echo printf("notify: %s %d items", l:path, len(l:loclist))
+    "echo printf("notify: %s %d items", l:path, len(l:loclist))
+    if mode() == 'n'
+        call wf#lsp#diagnostics#updateLocList()
+    endif
+
 endfunction
