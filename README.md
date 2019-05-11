@@ -96,6 +96,11 @@ https://microsoft.github.io/language-server-protocol/
 
 * ⭕️ wfとのJSON-RPC通信のログを表示
 
+#### 状態表示
+
+* workspace(rootpath, language)
+    * document(relative path from rootpath)
+
 #### `textDocument/didOpen`
 
 * ⭕️ autocmd FileType
@@ -150,5 +155,9 @@ https://microsoft.github.io/language-server-protocol/
 https://github.com/tomv564/pyls-mypy/issues/17
 
 
-mypyの `--command` 引数を使う場合に、mypyにソースのファイルパスを渡す方法を追加してやる必要がある。 `pyls-mypy` でなく、 `mypy` の改造。
+mypyの `--command` 引数を使う場合に、mypyにソースのファイルパスを渡す方法を追加してやる必要がある。
+`pyls-mypy` で `mypy` にモンキーパッチかのぅ。
+
+
+
 

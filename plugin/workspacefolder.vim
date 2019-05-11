@@ -15,11 +15,11 @@ let g:WS_CLIENT_NOTIFY = 'CLIENT_NOTIFY'
 
 augroup WorkspaceFolder
     autocmd!
-    autocmd FileType python call ws#lsp#documentOpen()
-    "autocmd CursorMoved *.py call ws#lsp#highlight()
-    autocmd TextChanged *.py call ws#lsp#documentChange()
-    autocmd InsertLeave *.py call ws#lsp#documentChange()
-    autocmd BufEnter *.py call ws#lsp#diagnostics#updateLocList()
+    autocmd FileType python call ws#documentOpen()
+    "autocmd CursorMoved *.py call ws#highlight()
+    autocmd TextChanged *.py call ws#documentChange()
+    autocmd InsertLeave *.py call ws#documentChange()
+    autocmd BufEnter *.py call ws#updateLocList()
 augroup END
 
 
