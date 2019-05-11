@@ -80,8 +80,8 @@ class UpstreamMethods:
 
 
 class LanguageServer:
-    def __init__(self, cmd, *args):
-        self.stream = pipestream.PipeStream(cmd, *args)
+    def __init__(self, cwd, cmd, *args):
+        self.stream = pipestream.PipeStream(cwd, cmd, *args)
         # start stdout reader
         asyncio.create_task(self.stream.process_stdout(self._on_request))
         # start stderr reader
@@ -143,6 +143,15 @@ class LanguageServer:
                                                  **util.to_dict(params))
         return await self._async_request(request)
 
+    async def async_document_completion(self, path: pathlib.Path, line: int,
+                                        col: int):
+        params = TextDocumentPositionParams(
+                TextDocumentIdentifier(to_uri(path)), Position(line, col))
+        request = self.dispatcher.create_request('textDocument/completion',
+                                                 **util.to_dict(params))
+        return await self._async_request(request)
+
+
     def notify_initialized(self):
         notify = json_rpc.JsonRPCNotify('initialized', {})
         self.stream.send_notify(notify)
@@ -193,9 +202,9 @@ def get_workspace_info(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     return None
 
 
-def create_ls(language: str) -> LanguageServer:
-    if language == 'python':
-        return LanguageServer('pyls')
+def create_ls(info: WorkspaceInfo) -> LanguageServer:
+    if info.language == 'python':
+        return LanguageServer(info.path, 'pyls')
 
     raise NotImplementedError(language)
 
@@ -205,9 +214,9 @@ class Workspace:
     Workspace単位にLanguageServerを起動する
     '''
 
-    def __init__(self, path: pathlib.Path, language: str) -> None:
-        self.path = path
-        self.ls = create_ls(language)
+    def __init__(self, info: WorkspaceInfo) -> None:
+        self.path = info.path
+        self.ls = create_ls(info)
 
         loop = asyncio.get_running_loop()
         self.async_initialized = loop.create_future()
@@ -258,6 +267,10 @@ class Document:
         await self.ws.async_initialized
         return await self.ws.ls.async_document_definition(self.path, line, col)
 
+    async def async_completion(self, line: int, col: int) -> Any:
+        await self.ws.async_initialized
+        return await self.ws.ls.async_document_completion(self.path, line, col)
+
 
 ##############################################################################
 # interface
@@ -283,7 +296,7 @@ class LspInterface:
     def _get_or_create_workspace(self, info: WorkspaceInfo) -> Workspace:
         ws = self.workspace_map.get(info.path)
         if not ws:
-            ws = Workspace(info.path, info.language)
+            ws = Workspace(info)
             self.workspace_map[info.path] = ws
         return ws
 
@@ -334,3 +347,11 @@ class LspInterface:
         document = self._get_or_create_document(path)
         if document:
             return await document.async_definition(line, col)
+
+    @dispatcher.rpc_method
+    async def request_document_completion(self, _path: str, line: int,
+                                          col: int) -> Any:
+        path = pathlib.Path(_path)
+        document = self._get_or_create_document(path)
+        if document:
+            return await document.async_completion(line, col)

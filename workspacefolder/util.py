@@ -21,8 +21,8 @@ def to_dict(src) -> dict:
         return src
 
 def indent_json(src: bytes)->bytes:
-    j = json.loads(src)
-    return json.dumps(j, indent=2).encode('utf-8')
+    j = json.loads(src.decode('utf-8'))
+    return json.dumps(j, indent=2)
 
 if __name__ == '__main__':
 

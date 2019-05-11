@@ -13,10 +13,11 @@ class PipeStream:
     経路を確立する。
     '''
 
-    def __init__(self, cmd, *args):
+    def __init__(self, cwd, cmd, *args):
         cmdline = [cmd] + list(args)
         logger.debug('%s', cmdline)
         self.p = subprocess.Popen(cmdline,
+                                  cwd=cwd,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   stdin=subprocess.PIPE)
@@ -44,9 +45,9 @@ class PipeStream:
                 body = request.body
                 rpc = json.loads(body)
                 if 'id' in rpc:
-                    logger.debug('%d->%s', rpc['id'], rpc)
+                    logger.debug('%d->%s', rpc['id'], util.indent_json(body))
                 else:
-                    logger.debug('-->%s', rpc)
+                    logger.debug('-->%s', util.indent_json(body))
                 on_request(rpc)
 
     async def process_stderr(self, on_error):

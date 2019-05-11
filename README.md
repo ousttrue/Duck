@@ -135,7 +135,11 @@ https://microsoft.github.io/language-server-protocol/
 
 #### `textDocument/completion`
 
-* 🔨 omnifunc
+* ⭕️ omnifunc
+* 🔨 kind
+* 🔨 menu
+* 🔨 detail(signature)
+* 🔨 documentation(preview)
 
 #### `textDocument/rename`
 
