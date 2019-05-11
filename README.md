@@ -114,6 +114,7 @@ https://microsoft.github.io/language-server-protocol/
 
 #### `textDocument/definition`
 
+* ⭕️ `call ws#gotoDefinition`
 * ⭕️ cursor move
 * ⭕️ 他のファイルへのジャンプ
 * ⭕️ jumplist
@@ -129,7 +130,7 @@ https://microsoft.github.io/language-server-protocol/
 
 #### `textDocument/hover`
 
-* preview
+* ⭕️ `call ws#hover`
 
 #### `textDocument/references`
 
@@ -156,7 +157,6 @@ https://microsoft.github.io/language-server-protocol/
 
 https://github.com/tomv564/pyls-mypy/issues/17
 
-
 mypyの `--command` 引数を使う場合に、mypyにソースのファイルパスを渡す方法を追加してやる必要がある。
-`pyls-mypy` で `mypy` にモンキーパッチかのぅ。
+`pyls-mypy` で `mypy` にモンキーパッチか
 
