@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, Callable
 import logging
 
 from workspacefolder import json_rpc
@@ -33,7 +33,7 @@ def rpc_method_with_name(name: str):
 class Dispatcher:
     def __init__(self, name: str) -> None:
         self.name = name
-        self.method_map: Dict[str, Any] = {}
+        self.method_map: Dict[str, Callable] = {}
         self.next_request_id = 1
         self.request_map: Dict[int, asyncio.Future] = {}
 
@@ -92,6 +92,7 @@ class Dispatcher:
             callback = self.method_map.get(message.method)
             if not callback:
                 logger.error('%s: %s not found', self.name, message.method)
+                return None
 
             if isinstance(message.params, dict):
                 result = await callback(**message.params)
@@ -108,6 +109,7 @@ class Dispatcher:
             callback = self.method_map.get(message.method)
             if not callback:
                 logger.error('%s: %s not found', self.name, message.method)
+                return None
 
             if isinstance(message.params, dict):
                 await callback(**message.params)

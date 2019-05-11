@@ -40,7 +40,7 @@ function! ws#lsp#diagnostics#updateLocList()
 
     if len(l:loclist)>0
         call ws#position#save()
-        lopen
+        lopen 4
         call ws#position#restore()
         "ll 1
     endif
