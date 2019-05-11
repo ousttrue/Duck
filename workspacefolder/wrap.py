@@ -2,7 +2,8 @@ import sys
 import asyncio
 import logging
 from typing import List, BinaryIO
-from workspacefolder import http, pipestream, util
+from workspacefolder import util
+from workspacefolder.rpc import http, pipestream
 logger = logging.getLogger(__name__)
 
 

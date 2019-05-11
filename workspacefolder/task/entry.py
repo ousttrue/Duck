@@ -1,7 +1,6 @@
 import subprocess
 import sys
 import pathlib
-from typing import Optional
 from . import windows_tool_search
 
 
@@ -59,13 +58,13 @@ class Entry:
             p = None
             try:
                 p = subprocess.Popen(self.command,
-                               cwd=path,
-                               encoding=self.encoding,
-                               universal_newlines=True)
+                                     cwd=path,
+                                     encoding=self.encoding,
+                                     universal_newlines=True)
                 ret = p.wait()
                 print(f'ret = {ret}')
                 if not self.retcode:
-                    if ret!=0:
+                    if ret != 0:
                         sys.exit(ret)
                 print()
 
@@ -77,4 +76,3 @@ class Entry:
                 if p and p.returncode is None:
                     print('kill')
                     p.kill()
-

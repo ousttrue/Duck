@@ -1,9 +1,6 @@
-import sys
-import subprocess
 import platform
 import pathlib
-import argparse
-from typing import List, Any, Optional, NamedTuple
+from typing import List, Optional
 import toml
 import logging
 from . import entry

@@ -4,7 +4,8 @@ import json
 import io
 import logging
 from typing import BinaryIO
-from workspacefolder import http, dispatcher, json_rpc, lsp
+from workspacefolder import lsp
+from . import http, dispatcher, json_rpc
 logger = logging.getLogger(__name__)
 
 

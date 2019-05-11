@@ -2,7 +2,7 @@ import pathlib
 import logging
 from typing import Optional, Any, Dict
 from . import workspace, document
-from .. import dispatcher
+from workspacefolder.rpc import dispatcher
 logger = logging.getLogger(__name__)
 
 

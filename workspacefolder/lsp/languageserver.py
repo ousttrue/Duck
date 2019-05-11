@@ -4,7 +4,8 @@ import asyncio
 import sys
 import os
 from typing import NamedTuple, Optional, List, BinaryIO, Union
-from .. import dispatcher, json_rpc, util, pipestream
+from workspacefolder import util
+from workspacefolder.rpc import dispatcher, json_rpc, pipestream
 import logging
 logger = logging.getLogger(__name__)
 

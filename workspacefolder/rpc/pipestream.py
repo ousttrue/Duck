@@ -2,7 +2,8 @@ import json
 import asyncio
 import subprocess
 import logging
-from workspacefolder import http, json_rpc, util
+from . import http, json_rpc
+from workspacefolder import util
 logger = logging.getLogger(__name__)
 
 

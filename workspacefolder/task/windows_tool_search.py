@@ -20,7 +20,7 @@ def find_cmake() -> Optional[pathlib.Path]:
     path = vswhere.get_latest_path()
     if path:
         vspath = pathlib.Path(path)
-        cmake =  vspath / 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'
+        cmake = vspath / 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'
         if cmake.exists():
             # add path to MSBuild
             msbuild_path = vspath / 'MSBuild\\Current\\Bin'
@@ -29,4 +29,3 @@ def find_cmake() -> Optional[pathlib.Path]:
             return cmake
 
     return None
-

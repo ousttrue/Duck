@@ -2,7 +2,7 @@ import asyncio
 from typing import Dict, Any, Optional, Union, Callable
 import logging
 
-from workspacefolder import json_rpc
+from . import json_rpc
 logger = logging.getLogger(__name__)
 
 
