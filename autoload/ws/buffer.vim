@@ -88,11 +88,25 @@ endfunction
 function! ws#buffer#get_or_create(name) abort
     let l:nr = bufnr(a:name)
     if bufexists(l:nr)
-        echom printf('%d: get %s', l:nr, a:name)
+        "echom printf('%d: get %s', l:nr, a:name)
         exec printf(':b%d', l:nr)
     else
-        echom printf('%d: create %s', l:nr, a:name)
+        "echom printf('%d: create %s', l:nr, a:name)
         call s:new_buffer(a:name)
     endif
+endfunction
+
+" バッファ全体のテキストを得る
+function! ws#buffer#get_text() abort
+    if &fileformat == 'unix'
+        let line_ending = "\n"
+    elseif &fileformat == 'dos'
+        let line_ending = "\r\n"
+    elseif &fileformat == 'mac'
+        let line_ending = "\r"
+    else
+        echoerr "unknown value for the 'fileformat' setting: " . &fileformat
+    endif
+    return join(getline(1, '$'), line_ending).line_ending
 endfunction
 

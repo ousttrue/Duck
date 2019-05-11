@@ -39,10 +39,7 @@ function! ws#lsp#diagnostics#updateLocList()
     call setloclist(l:winid, l:loclist)
 
     if len(l:loclist)>0
-        call ws#position#save()
-        lopen 4
-        call ws#position#restore()
-        "ll 1
+        call ws#position#keep({ -> execute('lopen 4')})
     endif
 endfunction
 

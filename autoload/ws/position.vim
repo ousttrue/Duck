@@ -1,11 +1,17 @@
-function! ws#position#save()
-    let s:wid = win_getid()
-    let s:pos = getcurpos()
-endfunction
+function! ws#position#keep(callback)
+    " save
+    let l:col = col('.')
+    let l:line = line('.')
+    let l:bufnr = bufnr('%')
+    let l:wid = win_getid()
+    "echom printf('<= %d:%d:%d, %d', l:wid, l:bufnr, l:line, l:col)
 
-function! ws#position#restore()
-    call win_gotoid(s:wid)
-    call setpos('.', s:pos)
+    call a:callback()
+
+    call win_gotoid(l:wid)
+    execute printf('%db', l:bufnr)
+    call setpos('.', [l:bufnr, l:line, l:col, 0])
+    "echom printf('=> %d:%d:%d, %d', l:wid, l:bufnr, l:line, l:col)
 endfunction
 
 function! ws#position#goto(uri, line, col)
