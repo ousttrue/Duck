@@ -1,8 +1,7 @@
 import pathlib
 import logging
-from typing import Optional, Any, Dict
+from typing import Optional, Dict, Iterable
 from . import workspace, document
-from workspacefolder.rpc import dispatcher
 logger = logging.getLogger(__name__)
 
 
@@ -36,8 +35,8 @@ class LspInterface:
             self.workspace_map[info.path] = ws
         return ws
 
-    def _get_or_create_document(self, path: pathlib.Path,
-                                text='') -> Optional[document.Document]:
+    def get_or_create_document(self, path: pathlib.Path
+                               ) -> Optional[document.Document]:
         doc = self.document_map.get(path)
         if not doc:
             ws = self._get_or_create_workspace(path)
@@ -46,45 +45,7 @@ class LspInterface:
             self.workspace_map[ws.path] = ws
 
             # create document
-            doc = document.Document(path, ws, text)
+            doc = document.Document(path, ws)
             self.document_map[path] = doc
 
         return doc
-
-    @dispatcher.rpc_method
-    async def notify_document_open(self, _path: str, text: str) -> None:
-        path = pathlib.Path(_path)
-        doc = self._get_or_create_document(path, text)
-        if doc:
-            await doc.ws.async_initialized
-
-    @dispatcher.rpc_method
-    async def notify_document_change(self, _path: str, text: str) -> None:
-        path = pathlib.Path(_path)
-        doc = self._get_or_create_document(path)
-        if doc:
-            await doc.notify_change(text)
-
-    @dispatcher.rpc_method
-    async def request_document_highlight(self, _path: str, line: int,
-                                         col: int) -> Any:
-        path = pathlib.Path(_path)
-        doc = self._get_or_create_document(path)
-        if doc:
-            return await doc.async_highlight(line, col)
-
-    @dispatcher.rpc_method
-    async def request_document_definition(self, _path: str, line: int,
-                                          col: int) -> Any:
-        path = pathlib.Path(_path)
-        doc = self._get_or_create_document(path)
-        if doc:
-            return await doc.async_definition(line, col)
-
-    @dispatcher.rpc_method
-    async def request_document_completion(self, _path: str, line: int,
-                                          col: int) -> Any:
-        path = pathlib.Path(_path)
-        doc = self._get_or_create_document(path)
-        if doc:
-            return await doc.async_completion(line, col)

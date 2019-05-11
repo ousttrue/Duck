@@ -14,21 +14,17 @@ class LspTests(unittest.TestCase):
 
             lspi = lsp.LspInterface()
 
-            # ws = Workspace(path.parent, 'python')
-            # await ws.async_initialized
-            #
-            # documen = Document(path, ws, text)
+            document = lspi.get_or_create_document(path)
 
-            await lspi.notify_document_open(path, text)
+            await document.notify_open(text)
 
             # wait diagnostics
             await asyncio.sleep(1)
 
-            await lspi.notify_document_change(path, text)
+            await document.notify_change(text)
 
-            await lspi.request_document_highlight(pathlib.Path(__file__), 0, 0)
-            await lspi.request_document_definition(pathlib.Path(__file__), 0,
-                                                   0)
+            await document.request_highlight(0, 0)
+            await document.request_definition(0, 0)
 
             await asyncio.sleep(2)
 

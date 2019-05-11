@@ -28,7 +28,7 @@ class PipeStream:
         self.p.stdin.close()
         self.p.stdout.close()
         self.p.stderr.close()
-        # self.p.terminate()
+        self.p.terminate()
 
     async def process_stdout(self, on_request) -> None:
         r = self.p.stdout

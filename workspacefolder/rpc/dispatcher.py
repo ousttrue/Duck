@@ -38,6 +38,7 @@ class Dispatcher:
         self.request_map: Dict[int, asyncio.Future] = {}
 
     def register(self, name: str, callback) -> None:
+        logger.debug('register: %s', name)
         self.method_map[name] = callback
 
     def register_dbug_methods(self) -> None:
