@@ -4,6 +4,8 @@ Debug depends on build, build depends on code, and code depends on the root path
 
 vimでDebugAdapterを駆動するバックエンドを作る計画。
 
+Python-3.7
+
 ## 主な機能
 
 ### Debug Adapter の起動
@@ -157,7 +159,4 @@ https://github.com/tomv564/pyls-mypy/issues/17
 
 mypyの `--command` 引数を使う場合に、mypyにソースのファイルパスを渡す方法を追加してやる必要がある。
 `pyls-mypy` で `mypy` にモンキーパッチかのぅ。
-
-
-
 

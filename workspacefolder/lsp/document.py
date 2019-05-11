@@ -39,6 +39,14 @@ class Document:
         await self.ws.async_initialized
         return await self.ws.ls.async_document_definition(self.path, line, col)
 
+    async def request_hover(self, line: int, col: int) -> Any:
+        await self.ws.async_initialized
+        return await self.ws.ls.async_document_hover(self.path, line, col)
+
+    async def request_references(self, line: int, col: int) -> Any:
+        await self.ws.async_initialized
+        return await self.ws.ls.async_document_references(self.path, line, col)
+
     async def request_completion(self, line: int, col: int) -> Any:
         await self.ws.async_initialized
         return await self.ws.ls.async_document_completion(self.path, line, col)

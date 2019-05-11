@@ -25,6 +25,9 @@ class LspTests(unittest.TestCase):
 
             await document.request_highlight(0, 0)
             await document.request_definition(0, 0)
+            await document.request_completion(44-1, 16-1)
+            await document.request_hover(0, 0)
+            await document.request_references(0, 0)
 
             await asyncio.sleep(2)
 

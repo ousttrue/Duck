@@ -9,9 +9,7 @@ from workspacefolder.rpc import dispatcher, json_rpc, pipestream
 import logging
 logger = logging.getLogger(__name__)
 
-
-def to_uri(path: pathlib.Path) -> str:
-    return 'file:///' + str(path).replace('\\', '/')
+PUBLISH_DIAGNOSTICS = 'textDocument/publishDiagnostics'
 
 
 # types {{{
@@ -59,7 +57,15 @@ class DidChangeTextDocumentParams(NamedTuple):
 
 # }}}
 
-PUBLISH_DIAGNOSTICS = 'textDocument/publishDiagnostics'
+
+def to_uri(path: pathlib.Path) -> str:
+    return 'file:///' + str(path).replace('\\', '/')
+
+
+def create_postion_params(path: pathlib.Path, line: int, col: int) -> dict:
+    params = TextDocumentPositionParams(TextDocumentIdentifier(to_uri(path)),
+                                        Position(line, col))
+    return util.to_dict(params)
 
 
 class UpstreamMethods:
@@ -124,26 +130,38 @@ class LanguageServer:
 
     async def async_document_highlight(self, path: pathlib.Path, line: int,
                                        col: int):
-        params = TextDocumentPositionParams(
-            TextDocumentIdentifier(to_uri(path)), Position(line, col))
+        params_dict = create_postion_params(path, line, col)
         request = self.dispatcher.create_request(
-            'textDocument/documentHighlight', **util.to_dict(params))
+            'textDocument/documentHighlight', **params_dict)
         return await self._async_request(request)
 
     async def async_document_definition(self, path: pathlib.Path, line: int,
                                         col: int):
-        params = TextDocumentPositionParams(
-            TextDocumentIdentifier(to_uri(path)), Position(line, col))
+        params_dict = create_postion_params(path, line, col)
         request = self.dispatcher.create_request('textDocument/definition',
-                                                 **util.to_dict(params))
+                                                 **params_dict)
         return await self._async_request(request)
 
     async def async_document_completion(self, path: pathlib.Path, line: int,
                                         col: int):
-        params = TextDocumentPositionParams(
-            TextDocumentIdentifier(to_uri(path)), Position(line, col))
+        params_dict = create_postion_params(path, line, col)
         request = self.dispatcher.create_request('textDocument/completion',
-                                                 **util.to_dict(params))
+                                                 **params_dict)
+        return await self._async_request(request)
+
+    async def async_document_hover(self, path: pathlib.Path, line: int,
+                                   col: int):
+        params_dict = create_postion_params(path, line, col)
+        request = self.dispatcher.create_request('textDocument/hover',
+                                                 **params_dict)
+        return await self._async_request(request)
+
+    async def async_document_references(self, path: pathlib.Path, line: int,
+                                        col: int):
+        params_dict = create_postion_params(path, line, col)
+        params_dict['context'] = {'includeDeclaration': True}
+        request = self.dispatcher.create_request('textDocument/references',
+                                                 **params_dict)
         return await self._async_request(request)
 
     def notify_initialized(self):

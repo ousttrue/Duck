@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class JsonRPCRequest(NamedTuple):
     method: str
-    params: Union[list, dict]
+    params: Any
     id: int
     jsonrpc: str = '2.0'
 
