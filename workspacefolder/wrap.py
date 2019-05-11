@@ -20,7 +20,7 @@ async def process_stdin(r: BinaryIO, w: BinaryIO) -> None:
         if request:
             # logging
             body = util.indent_json(request.body)
-            logger.debug('<--' + body.decode('utf-8'))
+            logger.debug('<--' + body)
 
             w.flush()
 
@@ -34,7 +34,7 @@ def write_http(w: BinaryIO, body: bytes) -> None:
 def on_out(request: http.HttpRequest) -> None:
     # logging
     body = util.indent_json(request.body)
-    logger.debug('-->' + body.decode('utf-8'))
+    logger.debug('-->' + body)
     # through
     write_http(sys.stdout.buffer, request.body)
 

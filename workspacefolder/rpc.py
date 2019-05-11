@@ -22,6 +22,9 @@ async def async_dispatch(dispatcher, request, w):
         w.flush()
 
 
+BOM = b'\xef\xbb\xbf'
+
+
 async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     splitter = http.HttpSplitter()
 
@@ -34,7 +37,7 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
     if not bom_check:
         logger.debug(b'stdin break')
         return
-    if bom_check != b'\xef\xbb\xbf':  # BOM
+    if bom_check != BOM:  # BOM
         for b in bom_check:
             splitter.push(b)
 
@@ -51,10 +54,12 @@ async def start_stdin_reader(r: BinaryIO, w: BinaryIO, dispatcher) -> None:
         if request:
             asyncio.create_task(async_dispatch(dispatcher, request, w))
 
+
 def setup_parser(parser):
     parser.add_argument('--rpc',
                         action='store_true',
                         help='''enable rpc in stdinout''')
+
 
 def execute(parsed):
     logging.info('##################################################')

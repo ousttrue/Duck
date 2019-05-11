@@ -5,7 +5,7 @@ import os
 import asyncio
 import logging
 from typing import Union, NamedTuple, Optional, BinaryIO, List, Any, Dict
-from workspacefolder import dispatcher, json_rpc, util, pipestream
+from .. import dispatcher, json_rpc, util, pipestream
 logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
@@ -146,11 +146,10 @@ class LanguageServer:
     async def async_document_completion(self, path: pathlib.Path, line: int,
                                         col: int):
         params = TextDocumentPositionParams(
-                TextDocumentIdentifier(to_uri(path)), Position(line, col))
+            TextDocumentIdentifier(to_uri(path)), Position(line, col))
         request = self.dispatcher.create_request('textDocument/completion',
                                                  **util.to_dict(params))
         return await self._async_request(request)
-
 
     def notify_initialized(self):
         notify = json_rpc.JsonRPCNotify('initialized', {})
@@ -181,6 +180,12 @@ class WorkspaceInfo(NamedTuple):
     path: pathlib.Path
     language: str
 
+    def launch(self) -> LanguageServer:
+        if self.language == 'python':
+            return LanguageServer(self.path, 'pyls')
+
+        raise NotImplementedError(self.language)
+
 
 def get_python_root(path: pathlib.Path) -> pathlib.Path:
     current = path.parent
@@ -202,13 +207,6 @@ def get_workspace_info(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     return None
 
 
-def create_ls(info: WorkspaceInfo) -> LanguageServer:
-    if info.language == 'python':
-        return LanguageServer(info.path, 'pyls')
-
-    raise NotImplementedError(language)
-
-
 class Workspace:
     '''
     Workspace単位にLanguageServerを起動する
@@ -216,7 +214,7 @@ class Workspace:
 
     def __init__(self, info: WorkspaceInfo) -> None:
         self.path = info.path
-        self.ls = create_ls(info)
+        self.ls = info.launch()
 
         loop = asyncio.get_running_loop()
         self.async_initialized = loop.create_future()

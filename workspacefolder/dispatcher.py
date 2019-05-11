@@ -35,7 +35,7 @@ class Dispatcher:
         self.name = name
         self.method_map: Dict[str, Any] = {}
         self.next_request_id = 1
-        self.request_map = {}
+        self.request_map: Dict[int, asyncio.Future] = {}
 
     def register(self, name: str, callback) -> None:
         self.method_map[name] = callback

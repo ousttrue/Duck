@@ -4,11 +4,6 @@ Debug depends on build, build depends on code, and code depends on the root path
 
 vimでDebugAdapterを駆動するバックエンドを作る計画。
 
-* pyls + ms-python.pythonのDebugAdapter の環境を最初に作る
-* [後で]cquery + webfreak.debugのDebugAdapter
-* [後で]dls + webfreak.debugのDebugAdapter
-* [後で]C#
-
 ## 主な機能
 
 ### Debug Adapter の起動
@@ -142,4 +137,18 @@ https://microsoft.github.io/language-server-protocol/
 * 🔨 documentation(preview)
 
 #### `textDocument/rename`
+
+### LanguageServer
+#### pyls
+
+```
+[mypy] No parent module -- cannot perform relative import
+```
+
+相対import使用時に回避不能。
+
+https://github.com/tomv564/pyls-mypy/issues/17
+
+
+mypyの `--command` 引数を使う場合に、mypyにソースのファイルパスを渡す方法を追加してやる必要がある。 `pyls-mypy` でなく、 `mypy` の改造。
 

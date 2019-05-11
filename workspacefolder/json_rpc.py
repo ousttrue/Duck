@@ -46,7 +46,7 @@ def parse(
     elif 'error' in rpc:
         return JsonRPCError(**rpc)
     else:
-        raise ValueError(src)
+        raise ValueError(rpc)
 
 
 def to_bytes(request_id: int, result: Any) -> bytes:
