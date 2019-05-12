@@ -164,7 +164,7 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 
 ## LanguageServer
 
-### pyls
+### `py` pyls
 
 ```
 [mypy] No parent module -- cannot perform relative import
@@ -183,7 +183,7 @@ mypyの `--command` 引数を使う場合に、mypyにソースのファイル�
 * ⭕️ completion
 * ⭕️ diagonostics
 
-### dls
+### `d` dls
 
 `dub run dls`
 
@@ -195,9 +195,17 @@ dub.json のある階層に chdir する必要がある？
 * 🔨 completion
 * ⭕️ diagonostics
 
-### serve-d
+### `d` serve-d
 
 `dub run -a x86_mscoff serve-d`
 
 よくわからん。
+
+### `cs` omnisharp
+
+`omnisharp -lsp`
+
+初期化がうまくいかず。
+
+`Initialize` の送り方が違う？
 
