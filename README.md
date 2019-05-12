@@ -146,7 +146,10 @@ https://microsoft.github.io/language-server-protocol/
 
 #### `textDocument/rename`
 
+#### `textDocument/formatter`
+
 ### LanguageServer
+
 #### pyls
 
 ```
@@ -159,4 +162,28 @@ https://github.com/tomv564/pyls-mypy/issues/17
 
 mypyの `--command` 引数を使う場合に、mypyにソースのファイルパスを渡す方法を追加してやる必要がある。
 `pyls-mypy` で `mypy` にモンキーパッチか
+
+* ⭕️ gotoDefinition
+* 🔨 references
+* ⭕️ hover
+* ⭕️ completion
+* ⭕️ diagonostics
+
+#### dls
+
+`dub run dls`
+
+dub.json のある階層に chdir する必要がある？
+
+* 🔨 gotoDefinition(初回だけ動く？)
+* 🔨 references
+* 🔨 hover
+* 🔨 completion
+* ⭕️ diagonostics
+
+#### serve-d
+
+`dub run -a x86_mscoff serve-d`
+
+よくわからん。
 
