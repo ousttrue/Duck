@@ -3,18 +3,30 @@ import asyncio
 import logging
 import pathlib
 from workspacefolder import lsp
+from workspacefolder.lsp import workspaceinfo
 logger = logging.getLogger(__name__)
 
 
 class LspTests(unittest.TestCase):
-    def test_run(self):
+    def test_omni(self):
         async def run():
-            path = pathlib.Path(__file__)
+            samples = pathlib.Path(
+                __file__).resolve().parent.parent / 'samples'
+            path = samples / 'dotnetcore/Program.cs'
+            self.assertTrue(path.exists())
+
+            # proj = workspaceinfo.find_to_ancestors(path, "*.csproj")
+            # self.assertTrue(proj)
+            #
+            # info = workspaceinfo.get_workspaceinfo(path)
+            # self.assertTrue(info)
+
             text = path.read_text('utf-8')
 
             lspi = lsp.LspInterface()
 
             document = lspi.get_or_create_document(path)
+            self.assertTrue(document)
 
             await document.notify_open(text)
 
@@ -25,7 +37,7 @@ class LspTests(unittest.TestCase):
 
             await document.request_highlight(0, 0)
             await document.request_definition(0, 0)
-            await document.request_completion(44-1, 16-1)
+            await document.request_completion(44 - 1, 16 - 1)
             await document.request_hover(0, 0)
             await document.request_references(0, 0)
 

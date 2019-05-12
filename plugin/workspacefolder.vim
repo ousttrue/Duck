@@ -27,7 +27,7 @@ call ws#rpc#register_notify_callback('textDocument/publishDiagnostics', function
 
 
 function! s:onFileType()
-    if index(['python', 'd'], &filetype)<0
+    if index(['python', 'd', 'cs'], &filetype)<0
         return
     endif
 

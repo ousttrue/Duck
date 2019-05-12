@@ -1,4 +1,5 @@
 import pathlib
+import glob
 import logging
 from typing import List, Optional
 from . import languageserver
@@ -22,9 +23,9 @@ def find_to_ancestors(path: pathlib.Path,
                       target: str) -> Optional[pathlib.Path]:
     current = path.parent
     while True:
-        for f in current.iterdir():
-            if f.name == target:
-                return f
+
+        for f in current.glob(target):
+            return f
         if current == current.parent:
             break
         current = current.parent
@@ -40,21 +41,33 @@ class DlsWorkspaceInfo(WorkspaceInfo):
     def __init__(self, path: pathlib.Path) -> None:
         super().__init__(path, 'd', 'dub', 'run', 'dls')
 
+
 class ServeDWorkspaceInfo(WorkspaceInfo):
     def __init__(self, path: pathlib.Path) -> None:
-        super().__init__(path, 'd', 'dub', 'run', '-a', 'x86_mscoff', 'serve-d')
+        super().__init__(path, 'd', 'dub', 'run', '-a', 'x86_mscoff',
+                         'serve-d')
+
+
+class DotnetCoreWorkspaceInfo(WorkspaceInfo):
+    def __init__(self, path: pathlib.Path) -> None:
+        super().__init__(path, 'csharp', 'omnisharp.exe', '-lsp')
 
 
 def get_workspaceinfo(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     if path.suffix == '.py':
-        found = find_to_ancestors(path.parent, 'setup.py')
+        found = find_to_ancestors(path, 'setup.py')
         return PylsWorkspaceInfo(found.parent if found else path.parent)
     elif path.suffix == '.d':
-        found = find_to_ancestors(path.parent, 'dub.json')
+        found = find_to_ancestors(path, 'dub.json')
         if found:
             # require dub.json
             return DlsWorkspaceInfo(found.parent)
             #return ServeDWorkspaceInfo(found.parent / 'source')
+    elif path.suffix == '.cs':
+        found = find_to_ancestors(path, '*.csproj')
+        if found:
+            # require *.csproj
+            return DotnetCoreWorkspaceInfo(found.parent)
 
     #logger.warn('not implemented: %s', path)
     return None

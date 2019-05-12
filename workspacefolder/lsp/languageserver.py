@@ -6,10 +6,10 @@ import os
 from typing import NamedTuple, Optional, List, BinaryIO, Union
 from workspacefolder import util
 from workspacefolder.rpc import dispatcher, json_rpc, pipestream
+from . import upstream
 import logging
 logger = logging.getLogger(__name__)
 
-PUBLISH_DIAGNOSTICS = 'textDocument/publishDiagnostics'
 
 
 # types {{{
@@ -68,18 +68,6 @@ def create_postion_params(path: pathlib.Path, line: int, col: int) -> dict:
     return util.to_dict(params)
 
 
-class UpstreamMethods:
-    def __init__(self, f: BinaryIO) -> None:
-        self.f = f
-
-    @dispatcher.rpc_method_with_name(PUBLISH_DIAGNOSTICS)
-    async def diagnostics(self, **kw):
-        notify = json_rpc.JsonRPCNotify(PUBLISH_DIAGNOSTICS, kw)
-        body = json.dumps(util.to_dict(notify))
-        self.f.write(
-            f'Content-Length: {len(body)}\r\n\r\n{body}'.encode('utf-8'))
-
-
 class LanguageServer:
     def __init__(self, language: str, cwd: pathlib.Path, cmd: str,
                  *args) -> None:
@@ -92,7 +80,7 @@ class LanguageServer:
 
         self.dispatcher = dispatcher.Dispatcher('PipeStream')
 
-        um = UpstreamMethods(sys.stdout.buffer)
+        um = upstream.UpstreamHandles(sys.stdout.buffer)
         self.dispatcher.register_methods(um)
 
     def _on_request(self, rpc) -> None:

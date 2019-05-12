@@ -1,4 +1,5 @@
 import sys
+import pathlib
 import asyncio
 import logging
 from typing import List, BinaryIO
@@ -44,8 +45,8 @@ def on_error(line: bytes) -> None:
     logger.error(b'EE->' + line + b'\n')
 
 
-async def launch(cmd: str, args: List[str]):
-    ps = pipestream.PipeStream(cmd, *args)
+async def launch(cwd: pathlib.Path, cmd: str, args: List[str]):
+    ps = pipestream.PipeStream(cwd, cmd, *args)
 
     asyncio.create_task(ps.process_stdout(on_out))
     asyncio.create_task(ps.process_stderr(on_error))
@@ -57,6 +58,7 @@ def setup_parser(parser):
 
 
 def execute(parsed):
+    current = pathlib.Path('.').resolve()
     cmd = parsed.args[0]
     args = parsed.args[1:]
-    asyncio.run(launch(cmd, args))
+    asyncio.run(launch(current, cmd, args))
