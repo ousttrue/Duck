@@ -15,10 +15,9 @@ function! s:prepare_preview(bufname) abort
     call ws#buffer#get_or_create(a:bufname)
     let l:current = ws#buffer#begin(a:bufname)
 
-    let &l:filetype = 'markdown'
-    " clear
-    normal %d
-    "silent put "get hover..."
+        let &l:filetype = 'markdown'
+        " clear
+        normal %d
 
     call ws#buffer#end(l:current)
 
@@ -97,6 +96,7 @@ function! s:to_path(uri) abort
 endfunction
 
 function! s:references_preview(items)
+    call ws#buffer#get_or_create(s:REFENRECES_BUFFER)
     let l:current = ws#buffer#begin(s:REFENRECES_BUFFER)
 
     " clear
@@ -145,6 +145,7 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:HOVER_BUFFER = 'WS_HOVER'
 function! s:hover_preview(contents) abort
+    call ws#buffer#get_or_create(s:HOVER_BUFFER)
     let l:current = ws#buffer#begin(s:HOVER_BUFFER)
 
     " clear
