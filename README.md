@@ -60,18 +60,27 @@ https://microsoft.github.io/language-server-protocol/
 
 ## コマンドライン
 
-### `--wrap`
+```
+usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
+          [args [args ...]]
+```
 
-* ⭕️ 他のコマンドをラップする。lsp, dap のデバッグ用。 例えば、vim-lsp が pyls を起動するのに割り込む。
-
-`$ wf --wrap --logfile log.txt pyls`
-
-#### `--logfile file`
+### `--logfile file`
 
 * ⭕️ ロギングしてデバッグの助けにする。
 * ⭕️ http splitter
 * 🔨 LSPロギング(JSON-RPC)
 * 🔨 DAPロギング
+
+### `--wrap`
+
+`args` 引数をコマンドラインとして実行する。
+
+* ⭕️ 他のコマンドをラップする。lsp, dap のデバッグ用。 例えば、vim-lsp が pyls を起動するのに割り込む。
+
+`$ wf --wrap --logfile log.txt pyls`
+
+* 🔨 taskで記述できるようにして廃止する
 
 ### `--rpc`
 
@@ -80,6 +89,8 @@ https://microsoft.github.io/language-server-protocol/
 * ⭕️ JSON-RPC on HTTPもどき(Content-Lengthヘッダのみ)
 
 ### task
+
+`args` 引数をtask名として順番に実行する。
 
 * ⭕️ Workspace.toml に記述されたtaskを実行する。
 * 🔨 Workspace.toml に引数無し実行の記述を作る。
@@ -90,52 +101,56 @@ https://microsoft.github.io/language-server-protocol/
 * ⭕️ transportは、 `LSP` と同じ `HTTP-keepalive` 的なストリーム
 * ⭕️ protocolは、 `JSON-RPC`
 
-### LSP
+## LSP
 
-#### 通信ログのバッファ
+### 通信ログのバッファ
 
 * ⭕️ wfとのJSON-RPC通信のログを表示
 
-#### 状態表示
+### 状態表示
 
 * 🔨 workspace(rootpath, language)
 * 🔨 document(relative path from rootpath)
 
-#### `textDocument/didOpen`
+### Workspaceの管理
+
+* 🔨 違うフォルダのプロジェクトを開いたときにworkspaceを変更する
+
+### `textDocument/didOpen`
 
 * ⭕️ autocmd FileType
 
-#### `textDocument/didChange`
+### `textDocument/didChange`
 
 * ⭕️ autocmd TextChanged, InsertLeave
 * ⭕️ document バージョンをincrement
 
-#### `textDocument/definition`
+### `textDocument/definition`
 
 * ⭕️ `call ws#gotoDefinition`
 * ⭕️ cursor move
 * ⭕️ 他のファイルへのジャンプ
 * ⭕️ jumplist
 
-#### `textDocument/publishDiagnostics`
+### `textDocument/publishDiagnostics`
 
 * ⭕️ receive
 * ⭕️ location list
 * ⭕️ buffer切り替え時に復旧する
 * ⭕️ gutter
 
-#### `textDocument/highlight`
+### `textDocument/highlight`
 
-#### `textDocument/hover`
+### `textDocument/hover`
 
 * ⭕️ `call ws#hover`
 
-#### `textDocument/references`
+### `textDocument/references`
 
 * ⭕️ `call ws#references`
 * 🔨 jump list(LocationListに一時的に出す？)
 
-#### `textDocument/completion`
+### `textDocument/completion`
 
 * ⭕️ omnifunc
 * 🔨 kind
@@ -143,13 +158,13 @@ https://microsoft.github.io/language-server-protocol/
 * 🔨 detail(signature)
 * 🔨 documentation(preview)
 
-#### `textDocument/rename`
+### `textDocument/rename`
 
-#### `textDocument/formatter`
+### `textDocument/formatter`
 
-### LanguageServer
+## LanguageServer
 
-#### pyls
+### pyls
 
 ```
 [mypy] No parent module -- cannot perform relative import
@@ -168,7 +183,7 @@ mypyの `--command` 引数を使う場合に、mypyにソースのファイル�
 * ⭕️ completion
 * ⭕️ diagonostics
 
-#### dls
+### dls
 
 `dub run dls`
 
@@ -180,7 +195,7 @@ dub.json のある階層に chdir する必要がある？
 * 🔨 completion
 * ⭕️ diagonostics
 
-#### serve-d
+### serve-d
 
 `dub run -a x86_mscoff serve-d`
 
