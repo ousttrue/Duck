@@ -25,6 +25,9 @@ def find_to_ancestors(path: pathlib.Path,
         for f in current.iterdir():
             if f.name == target:
                 return f
+        if current == current.parent:
+            break
+        current = current.parent
     return None
 
 
