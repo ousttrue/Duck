@@ -31,9 +31,11 @@ function! s:onFileType()
         return
     endif
 
+    setlocal signcolumn=yes
+
     call ws#documentOpen()
     nnoremap <buffer> <C-]> :call ws#gotoDefinition()<CR>
-    nnoremap <buffer> <C-[> :call ws#references()<CR>
+    nnoremap <buffer> <C-K> :call ws#references()<CR>
     nnoremap <buffer> K :call ws#hover()<CR>
     setlocal omnifunc=ws#complete
 endfunction

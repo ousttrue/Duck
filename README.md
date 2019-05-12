@@ -66,8 +66,6 @@ https://microsoft.github.io/language-server-protocol/
 
 `$ wf --wrap --logfile log.txt pyls`
 
-* 🔨 引数無しで任意のexeを起動できるように設定を見るようにする
-
 #### `--logfile file`
 
 * ⭕️ ロギングしてデバッグの助けにする。
@@ -100,8 +98,8 @@ https://microsoft.github.io/language-server-protocol/
 
 #### 状態表示
 
-* workspace(rootpath, language)
-    * document(relative path from rootpath)
+* 🔨 workspace(rootpath, language)
+* 🔨 document(relative path from rootpath)
 
 #### `textDocument/didOpen`
 
@@ -124,7 +122,7 @@ https://microsoft.github.io/language-server-protocol/
 * ⭕️ receive
 * ⭕️ location list
 * ⭕️ buffer切り替え時に復旧する
-* 🔨 gutter
+* ⭕️ gutter
 
 #### `textDocument/highlight`
 
@@ -134,7 +132,8 @@ https://microsoft.github.io/language-server-protocol/
 
 #### `textDocument/references`
 
-* 🔨 jump list
+* ⭕️ `call ws#references`
+* 🔨 jump list(LocationListに一時的に出す？)
 
 #### `textDocument/completion`
 

@@ -24,23 +24,10 @@ function! ws#lsp#diagnostics#updateLocList()
         call setloclist(l:winid, [])
         return
     endif
-
-    " リストを入手
     let l:list = s:diagnostics_map[l:path]
 
-    " bufnrを投入
-    let l:loclist = []
-    for l:item in l:list
-        let l:item.bufnr = l:bufnr
-
-        call add(l:loclist, l:item)
-    endfor
-    " loclistに反映
-    call setloclist(l:winid, l:loclist)
-
-    if len(l:loclist)>0
-        call ws#position#keep({ -> execute('lopen 4')})
-    endif
+    call ws#loclist#apply(l:list, l:winid, l:bufnr)
+    call ws#sign#apply(l:list, l:path)
 endfunction
 
 function! ws#lsp#diagnostics#receive(params)
