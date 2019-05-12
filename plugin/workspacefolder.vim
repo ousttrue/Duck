@@ -15,7 +15,7 @@ let g:WS_CLIENT_NOTIFY = 'CLIENT_NOTIFY'
 
 augroup WorkspaceFolder
     autocmd!
-    autocmd FileType python call ws#documentOpen()
+    autocmd FileType * call s:onFileType()
     "autocmd CursorMoved *.py call ws#highlight()
     autocmd TextChanged *.py call ws#documentChange()
     autocmd InsertLeave *.py call ws#documentChange()
@@ -25,3 +25,11 @@ augroup END
 
 call ws#rpc#register_notify_callback('textDocument/publishDiagnostics', function('ws#lsp#diagnostics#receive'))
 
+
+function! s:onFileType()
+    call ws#documentOpen()
+    nnoremap <buffer> <C-]> :call ws#gotoDefinition()<CR>
+    nnoremap <buffer> <C-[> :call ws#references()<CR>
+    nnoremap <buffer> K :call ws#hover()<CR>
+    setlocal omnifunc=ws#complete
+endfunction
