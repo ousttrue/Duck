@@ -1,7 +1,7 @@
 import pathlib
 import logging
 from typing import Optional, Dict, Iterable
-from . import workspace, document
+from . import workspaceinfo, workspace, document
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +25,7 @@ class LspInterface:
 
     def _get_or_create_workspace(self, path: pathlib.Path
                                  ) -> Optional[workspace.Workspace]:
-        info = workspace.get_workspace_info(path)
+        info = workspaceinfo.get_workspaceinfo(path)
         if not info:
             return None
 
@@ -42,7 +42,7 @@ class LspInterface:
             ws = self._get_or_create_workspace(path)
             if not ws:
                 return None
-            self.workspace_map[ws.path] = ws
+            self.workspace_map[ws.info.path] = ws
 
             # create document
             doc = document.Document(path, ws)
