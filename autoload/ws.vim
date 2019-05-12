@@ -11,6 +11,21 @@ function! s:is_null_or_empty(ret) abort
     return 0
 endfunction
 
+function! s:prepare_preview(bufname) abort
+    call ws#buffer#get_or_create(a:bufname)
+    let l:current = ws#buffer#begin(a:bufname)
+
+    let &l:filetype = 'markdown'
+    " clear
+    normal %d
+    "silent put "get hover..."
+
+    call ws#buffer#end(l:current)
+
+    " show in preview
+    execute printf('pedit %s', expand('%'))
+endfunction
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " open & change
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -50,7 +65,7 @@ function! ws#highlight() abort
 endfunction
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" defnition & references
+" defnition
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:goto(ret) abort
     if s:is_null_or_empty(a:ret)
@@ -72,20 +87,56 @@ function! ws#gotoDefinition() abort
                 \ 'request_document_definition', l:path, l:line, l:col)
 endfunction
 
-function! s:print(ret) abort
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" references
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let s:REFENRECES_BUFFER = 'WS_REFERNCES'
+
+function! s:to_path(uri) abort
+    return printf("%s%s", toupper(a:uri[8]), a:uri[9:])
+endfunction
+
+function! s:references_preview(items)
+    let l:current = ws#buffer#begin(s:REFENRECES_BUFFER)
+
+    " clear
+    normal %d
+    " update
+
+    echom getcwd()
+    for l:item in a:items
+        let l:name = fnamemodify(s:to_path(l:item.uri), ':~:.')
+        let l:item = printf("%s: %s", l:name, l:item.range.start)
+        silent put =l:item
+    endfor
+    " Delete first empty line
+    0delete _
+
+    call ws#buffer#end(l:current)
+endfunction
+
+function! s:references(ret) abort
     if s:is_null_or_empty(a:ret)
         " no result
         return
     endif
 
-    echom printf("references: %s", a:ret)
+    if !len(a:ret)
+        return
+    endif
+
+    call ws#position#keep(function('s:references_preview', [a:ret]))
 endfunction
 
 function! ws#references() abort
     let l:path = expand('%:p')
     let l:line = line('.')-1
     let l:col = col('.')-1
-    call ws#rpc#request(function('s:print'),
+
+    " prepare preview
+    call ws#position#keep(function('s:prepare_preview', [s:REFENRECES_BUFFER]))
+
+    call ws#rpc#request(function('s:references'),
                 \ 'request_document_references', l:path, l:line, l:col)
 endfunction
 
@@ -93,7 +144,6 @@ endfunction
 " hover
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:HOVER_BUFFER = 'WS_HOVER'
-
 function! s:hover_preview(contents) abort
     let l:current = ws#buffer#begin(s:HOVER_BUFFER)
 
@@ -119,28 +169,13 @@ function! s:hover(ret) abort
     call ws#position#keep(function('s:hover_preview', [a:ret.contents]))
 endfunction
 
-function! s:hover_prepare() abort
-    call ws#buffer#get_or_create(s:HOVER_BUFFER)
-    let l:current = ws#buffer#begin(s:HOVER_BUFFER)
-
-    let &l:filetype = 'markdown.ws-hover'
-    " clear
-    normal %d
-    silent put "get hover..."
-
-    call ws#buffer#end(l:current)
-
-    " show in preview
-    execute printf('pedit %s', expand('%'))
-endfunction
-
 function! ws#hover() abort
     let l:path = expand('%:p')
     let l:line = line('.')-1
     let l:col = col('.')-1
 
     " prepare preview
-    call ws#position#keep(function('s:hover_prepare'))
+    call ws#position#keep(function('s:prepare_preview', [s:HOVER_BUFFER]))
 
     call ws#rpc#request(function('s:hover'),
                 \ 'request_document_hover', l:path, l:line, l:col)

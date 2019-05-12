@@ -27,6 +27,10 @@ call ws#rpc#register_notify_callback('textDocument/publishDiagnostics', function
 
 
 function! s:onFileType()
+    if index(['python', 'd'], &filetype)<0
+        return
+    endif
+
     call ws#documentOpen()
     nnoremap <buffer> <C-]> :call ws#gotoDefinition()<CR>
     nnoremap <buffer> <C-[> :call ws#references()<CR>
