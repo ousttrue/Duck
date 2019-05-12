@@ -13,31 +13,45 @@ class WorkspaceInfo:
         self.cmd = cmd
         self.args = args
 
-# python {{{
-def get_python_root(path: pathlib.Path) -> pathlib.Path:
+    def launch(self) -> languageserver.LanguageServer:
+        return languageserver.LanguageServer(self.language, self.path,
+                                             self.cmd, *self.args)
+
+
+def find_to_ancestors(path: pathlib.Path,
+                      target: str) -> Optional[pathlib.Path]:
     current = path.parent
     while True:
-        if any(f.name == 'setup.py' for f in current.iterdir()):
-            return current
-
-        if current == current.parent:
-            break
-        current = current.parent
-    return path
+        for f in current.iterdir():
+            if f.name == target:
+                return f
+    return None
 
 
 class PylsWorkspaceInfo(WorkspaceInfo):
     def __init__(self, path: pathlib.Path) -> None:
-        path = get_python_root(path.parent)
         super().__init__(path, 'python', 'pyls')
 
-    def launch(self) -> languageserver.LanguageServer:
-        return languageserver.LanguageServer(self.path, self.cmd, *self.args)
-# }}}
+
+class DlsWorkspaceInfo(WorkspaceInfo):
+    def __init__(self, path: pathlib.Path) -> None:
+        super().__init__(path, 'd', 'dub', 'run', 'dls')
+
+class ServeDWorkspaceInfo(WorkspaceInfo):
+    def __init__(self, path: pathlib.Path) -> None:
+        super().__init__(path, 'd', 'dub', 'run', '-a', 'x86_mscoff', 'serve-d')
+
 
 def get_workspaceinfo(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     if path.suffix == '.py':
-        return PylsWorkspaceInfo(path)
+        found = find_to_ancestors(path.parent, 'setup.py')
+        return PylsWorkspaceInfo(found.parent if found else path.parent)
+    elif path.suffix == '.d':
+        found = find_to_ancestors(path.parent, 'dub.json')
+        if found:
+            # require dub.json
+            return DlsWorkspaceInfo(found.parent)
+            #return ServeDWorkspaceInfo(found.parent / 'source')
 
-    logger.warn('not implemented: %s', path)
+    #logger.warn('not implemented: %s', path)
     return None

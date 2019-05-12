@@ -49,7 +49,7 @@ function! ws#lsp#completion#complete(findstart, base) abort
     endif
 
     " sync current text
-    call ws#lsp#documentChange()
+    call ws#documentChange()
 
     " send request
     call ws#rpc#request(function('s:complete', [s:context]),

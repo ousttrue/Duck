@@ -81,7 +81,9 @@ class UpstreamMethods:
 
 
 class LanguageServer:
-    def __init__(self, cwd, cmd, *args):
+    def __init__(self, language: str, cwd: pathlib.Path, cmd: str,
+                 *args) -> None:
+        self.language = language
         self.stream = pipestream.PipeStream(cwd, cmd, *args)
         # start stdout reader
         asyncio.create_task(self.stream.process_stdout(self._on_request))
@@ -172,7 +174,7 @@ class LanguageServer:
                              text: str) -> None:
 
         params = DidOpenTextDocumentParams(
-            TextDocumentItem(to_uri(path), 'python', version, text))
+            TextDocumentItem(to_uri(path), self.language, version, text))
 
         notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
                                         util.to_dict(params))
