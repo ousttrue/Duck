@@ -28,6 +28,9 @@ class LspTests(unittest.TestCase):
             document = lspi.get_or_create_document(path)
             self.assertTrue(document)
 
+            # wait diagnostics
+            await asyncio.sleep(2)
+
             await document.notify_open(text)
 
             # wait diagnostics

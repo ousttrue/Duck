@@ -4,7 +4,7 @@ import logging
 from typing import List, Optional
 from . import languageserver
 logger = logging.getLogger(__name__)
-
+HERE = pathlib.Path(__file__).resolve().parent
 
 class WorkspaceInfo:
     def __init__(self, path: pathlib.Path, language: str, cmd: str,
@@ -50,8 +50,10 @@ class ServeDWorkspaceInfo(WorkspaceInfo):
 
 class DotnetCoreWorkspaceInfo(WorkspaceInfo):
     def __init__(self, path: pathlib.Path) -> None:
-        super().__init__(path, 'csharp', 'omnisharp.exe', '-lsp')
-
+        build_dir = HERE.parent.parent / 'build_tasks/omnisharp-roslyn/omnisharp-roslyn'
+        omni = build_dir / 'artifacts/publish/OmniSharp.Stdio.Driver/win7-x64/OmniSharp.exe'
+        logger.debug(omni)
+        super().__init__(path, 'csharp', str(omni), '-lsp', '-e', 'utf-8')
 
 def get_workspaceinfo(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     if path.suffix == '.py':

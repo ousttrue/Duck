@@ -46,7 +46,7 @@ class PipeStream:
                 body = request.body
                 rpc = json.loads(body)
                 if 'id' in rpc:
-                    logger.debug('%d->%s', rpc['id'], util.indent_json(body))
+                    logger.debug('%s->%s', rpc['id'], util.indent_json(body))
                 else:
                     logger.debug('-->%s', util.indent_json(body))
                 on_request(rpc)

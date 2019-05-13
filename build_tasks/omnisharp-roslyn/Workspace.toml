@@ -1,0 +1,10 @@
+[[tasks]]
+name = 'clone'
+if_not_exists = 'omnisharp-roslyn'
+command = ['git', 'clone', 'https://github.com/OmniSharp/omnisharp-roslyn.git']
+
+[[tasks]]
+name = 'build'
+depends = ['clone']
+cwd = 'omnisharp-roslyn'
+command = ['powershell', './build.ps1', '-target', 'Quick']

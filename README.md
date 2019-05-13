@@ -209,3 +209,12 @@ dub.json のある階層に chdir する必要がある？
 
 `Initialize` の送り方が違う？
 
+Extension
+
+https://www.nuget.org/packages/OmniSharp.Extensions.JsonRpc/
+
+
+になっているらしい。どうやって有効にするのか。
+
+
+
