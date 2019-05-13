@@ -23,7 +23,7 @@ class Duck:
         self.system = system
 
         self.tasks = {
-            t['name']: entry.Entry(system, t)
+            t['name']: entry.Entry(self.verbose, system, t)
             for t in get_tasks(self.toml)
         }
         for _, task in self.tasks.items():
@@ -34,6 +34,8 @@ class Duck:
         for _, task in self.tasks.items():
             if not any((task in _v.depends) for _k, _v in self.tasks.items()):
                 self.root.append(task)
+
+        self.defaults = self.toml.get('defaults')
 
     def start(self, starts: List[str]) -> None:
         if self.verbose:
@@ -73,18 +75,21 @@ def execute(parsed) -> bool:
     if parsed.args:
         duck.start(parsed.args)
     else:
-        print('[Workspace.toml]')
-        print(duck_file.resolve())
-        print()
-        if duck.tasks:
-            print('[task entries]')
+        if duck.defaults:
+            duck.start(duck.defaults)
+        else:
+            print('[Workspace.toml]')
+            print(duck_file.resolve())
+            print()
+            if duck.tasks:
+                print('[task entries]')
 
-            def traverse(task, level=0):
-                print(f'{"    " * level}{task}')
-                if task.depends:
-                    for depend in task.depends:
-                        traverse(depend, level + 1)
+                def traverse(task, level=0):
+                    print(f'{"    " * level}{task}')
+                    if task.depends:
+                        for depend in task.depends:
+                            traverse(depend, level + 1)
 
-            for task in duck.root:
-                traverse(task)
+                for task in duck.root:
+                    traverse(task)
     return True

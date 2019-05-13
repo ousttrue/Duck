@@ -1,6 +1,7 @@
-default = 'test'
+defaults = ['test']
 
 [[tasks]]
 name = 'test'
+#stdio = true
 command = ['python', 'setup.py', 'test']
 

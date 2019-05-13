@@ -5,7 +5,8 @@ from . import windows_tool_search
 
 
 class Entry:
-    def __init__(self, system, t) -> None:
+    def __init__(self, debug, system, t) -> None:
+        self.debug = debug
         self.system = system
         self.name = t['name']  # required
         self.command = t.get('command')
@@ -15,6 +16,11 @@ class Entry:
         self.parent = None
         self.retcode = t.get('retcode')
         self.if_not_exists = t.get('if_not_exists')
+        self.stdio = t.get('stdio', False)
+
+    def print(self, *args):
+        if self.debug:
+            print(*args)
 
     def __str__(self):
         return f'<{self.name}>'
@@ -42,7 +48,7 @@ class Entry:
             if (basepath / self.if_not_exists).exists():
                 return
 
-        print(f'[{self.name}]')
+        self.print(f'[{self.name}]')
         if self.command:
             path = basepath
             if self.cwd:
@@ -50,23 +56,29 @@ class Entry:
                 path = basepath / self.cwd
                 if not path.exists():
                     path.mkdir(parents=True, exist_ok=True)
-            print(f'cwd: {path}')
+            self.print(f'cwd: {path}')
 
             self.prepare_command()
 
-            print('# ' + ' '.join(self.command))
+            self.print('# ' + ' '.join(self.command))
             p = None
             try:
-                p = subprocess.Popen(self.command,
-                                     cwd=path,
-                                     encoding=self.encoding,
-                                     universal_newlines=True)
+                kw ={
+                        'cwd': path,
+                        'encoding': self.encoding,
+                        'universal_newlines': True,
+                        }
+                if self.stdio:
+                    si = subprocess.STARTUPINFO()
+                    si.dwFlags = subprocess.STARTF_USESTDHANDLES
+                    kw['startupinfo'] = si
+                p = subprocess.Popen(self.command, **kw)
                 ret = p.wait()
-                print(f'ret = {ret}')
+                self.print(f'ret = {ret}')
                 if not self.retcode:
                     if ret != 0:
                         sys.exit(ret)
-                print()
+                self.print()
 
             except FileNotFoundError as error:
                 print(f'{error}: {self.command[0]}')
@@ -74,5 +86,5 @@ class Entry:
 
             finally:
                 if p and p.returncode is None:
-                    print('kill')
+                    self.print('kill')
                     p.kill()
