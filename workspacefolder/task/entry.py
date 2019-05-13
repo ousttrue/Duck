@@ -67,10 +67,12 @@ class Entry:
                         'cwd': path,
                         'encoding': self.encoding,
                         'universal_newlines': True,
+                        'stderr': subprocess.STDOUT,
                         }
                 if self.stdio:
                     si = subprocess.STARTUPINFO()
                     si.dwFlags = subprocess.STARTF_USESTDHANDLES
+
                     kw['startupinfo'] = si
                 p = subprocess.Popen(self.command, **kw)
                 ret = p.wait()
