@@ -50,10 +50,7 @@ class ServeDWorkspaceInfo(WorkspaceInfo):
 
 class DotnetCoreWorkspaceInfo(WorkspaceInfo):
     def __init__(self, path: pathlib.Path) -> None:
-        build_dir = HERE.parent.parent / 'build_tasks/omnisharp-roslyn/omnisharp-roslyn'
-        omni = build_dir / 'artifacts/publish/OmniSharp.Stdio.Driver/win7-x64/OmniSharp.exe'
-        logger.debug(omni)
-        super().__init__(path, 'csharp', str(omni), '-lsp', '-e', 'utf-8')
+        super().__init__(path, 'csharp', 'OmniSharp', '-lsp', '-e', 'utf-8')
 
 def get_workspaceinfo(path: pathlib.Path) -> Optional[WorkspaceInfo]:
     if path.suffix == '.py':

@@ -3,6 +3,10 @@ if exists('g:loaded_workspacefolder')
 endif
 let g:loaded_workspacefolder = 1
 
+if !exists('g:lsp_filetypes')
+    let g:lsp_filetypes = ['python', 'd']
+endif
+
 let g:WS_SERVER_REQUEST = 'SERVER_REQUEST'
 let g:WS_SERVER_RESPONSE = 'SERVER_RESPONSE'
 let g:WS_SERVER_ERROR = 'SERVER_ERROR'
@@ -27,7 +31,7 @@ call ws#rpc#register_notify_callback('textDocument/publishDiagnostics', function
 
 
 function! s:onFileType()
-    if index(['python', 'd', 'cs'], &filetype)<0
+    if index(g:lsp_filetypes, &filetype)<0
         return
     endif
 

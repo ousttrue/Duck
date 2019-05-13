@@ -164,6 +164,8 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 
 ## LanguageServer
 
+意外と素直に動くの無いんだけど・・・
+
 ### `py` pyls
 
 ```
@@ -216,5 +218,32 @@ https://www.nuget.org/packages/OmniSharp.Extensions.JsonRpc/
 
 になっているらしい。どうやって有効にするのか。
 
+マスターをビルドして、 `OmniSharp.exe -lsp` でよさそうだなのだが・・・。
 
+`./build.ps1 -taget Quick` でビルドできる。
+
+`http` 版と `stdio` 版があって、stdio版が目的のもの。
+こいつに、 `-lsp` 引数をつけるのだが・・・
+
+https://github.com/OmniSharp/omnisharp-vim/issues/451
+
+> OmniSharp-roslyn does have an LSP implementation, but it's not complete yet. However OmniSharp-vim and OmniSharp-roslyn predate LSP and still communicate using their older protocols.
+
+OmniSharp-vim は古いプロトコルを使っていると言うておるな。
+
+`OmniSharp-vim` の動作条件は、 `*.sln` の存在だった。
+
+OmniSharp-roslyn にアタッチしてデバッグしないと無理。
+
+した。
+
+initialize引数の textcapablity と workspacecapblity に何か入れないとnullRef で初期化に失敗する。
+
+### F#
+
+https://github.com/fsprojects/fsharp-language-server
+
+### node-js のやつ
+
+### clang
 
