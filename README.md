@@ -6,17 +6,7 @@ vimでDebugAdapterを駆動するバックエンドを作る計画。
 
 Python-3.7
 
-## 主な機能
-
-### Debug Adapter の起動
-
-https://microsoft.github.io/debug-adapter-protocol/overview
-
-* VSCodeの拡張を起動して、標準入出力から制御する。
-* vimのjob経由で起動する。
-* AdapterAdapter 的なものになるのだけど、DebugAdapter毎に微妙に挙動違うのでこのレイヤーで差異を吸収する。
-
-### Task実行
+## Task実行
 
 * ⭕️ レジストリ経由でcmake, MSBuild 等を発見する能力。vswhere。
 * タスクの実行
@@ -43,14 +33,6 @@ command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
 ```
 
 ### Language Server の起動
-
-https://microsoft.github.io/language-server-protocol/
-
-* ⭕️ vimのjob経由で起動する。
-    * ⭕️ pyls
-    * 🔨 dls
-    * 🔨 cquery
-* 🔨 state管理(stopped, starting, run)
 
 ### WorkspaceFolderの確定
 
@@ -101,7 +83,24 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 * ⭕️ transportは、 `LSP` と同じ `HTTP-keepalive` 的なストリーム
 * ⭕️ protocolは、 `JSON-RPC`
 
+## DAP
+
+https://microsoft.github.io/debug-adapter-protocol/overview
+
+* VSCodeの拡張を起動して、標準入出力から制御する。
+* vimのjob経由で起動する。
+* AdapterAdapter 的なものになるのだけど、DebugAdapter毎に微妙に挙動違うのでこのレイヤーで差異を吸収する。
+
+
 ## LSP
+
+https://microsoft.github.io/language-server-protocol/
+
+* ⭕️ vimのjob経由で起動する。
+    * ⭕️ pyls
+    * 🔨 dls
+    * 🔨 cquery
+* 🔨 state管理(stopped, starting, run)
 
 ### 通信ログのバッファ
 
@@ -131,6 +130,7 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 * ⭕️ cursor move
 * ⭕️ 他のファイルへのジャンプ
 * ⭕️ jumplist
+* 🔨 前のRequestが終わっていない時のキャンセル
 
 ### `textDocument/publishDiagnostics`
 
@@ -141,14 +141,18 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 
 ### `textDocument/highlight`
 
+* 🔨 前のRequestが終わっていない時のキャンセル
+
 ### `textDocument/hover`
 
 * ⭕️ `call ws#hover`
+* 🔨 前のRequestが終わっていない時のキャンセル
 
 ### `textDocument/references`
 
 * ⭕️ `call ws#references`
 * 🔨 jump list(LocationListに一時的に出す？)
+* 🔨 前のRequestが終わっていない時のキャンセル
 
 ### `textDocument/completion`
 
@@ -157,6 +161,7 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 * 🔨 menu
 * 🔨 detail(signature)
 * 🔨 documentation(preview)
+* 🔨 前のRequestが終わっていない時のキャンセル
 
 ### `textDocument/rename`
 
@@ -164,9 +169,9 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc] [--wrap]
 
 ## LanguageServer
 
-意外と素直に動くの無いんだけど・・・
+### `python` 
 
-### `py` pyls
+#### pyls
 
 ```
 [mypy] No parent module -- cannot perform relative import
@@ -185,7 +190,8 @@ mypyの `--command` 引数を使う場合に、mypyにソースのファイル�
 * ⭕️ diagonostics
 * ⭕️ completion
 
-### `d` dls
+### `d`
+#### dls
 
 `dub run dls`
 
@@ -197,13 +203,14 @@ dub.json のある階層に chdir する必要がある？
 * ⭕️ diagonostics
 * 🔨 completion
 
-### `d` serve-d
+#### serve-d
 
 `dub run -a x86_mscoff serve-d`
 
 よくわからん。
 
-### `cs` omnisharp
+### `csharp`
+#### omnisharp
 
 `omnisharp -lsp`
 
@@ -245,7 +252,12 @@ initialize引数の textcapablity と workspacecapblity を非null( `{}` でよ�
 * ⭕️ diagonostics
 * 🔨 completion IndexOutOfRangeException LspRequestRouter.cs: 161
 
-### F#
+requestがちゃんと帰ってくるようになるまでちょっと時間がかかる。
+15秒くらい？
+
+### fsharp
+
+#### fhsarp-language-server
 
 https://github.com/fsprojects/fsharp-language-server
 
