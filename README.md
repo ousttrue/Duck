@@ -180,10 +180,10 @@ mypyの `--command` 引数を使う場合に、mypyにソースのファイル�
 `pyls-mypy` で `mypy` にモンキーパッチか
 
 * ⭕️ gotoDefinition
-* 🔨 references
+* ⭕️ references
 * ⭕️ hover
-* ⭕️ completion
 * ⭕️ diagonostics
+* ⭕️ completion
 
 ### `d` dls
 
@@ -194,8 +194,8 @@ dub.json のある階層に chdir する必要がある？
 * 🔨 gotoDefinition(初回だけ動く？)
 * 🔨 references
 * 🔨 hover
-* 🔨 completion
 * ⭕️ diagonostics
+* 🔨 completion
 
 ### `d` serve-d
 
@@ -237,13 +237,21 @@ OmniSharp-roslyn にアタッチしてデバッグしないと無理。
 
 した。
 
-initialize引数の textcapablity と workspacecapblity に何か入れないとnullRef で初期化に失敗する。
+initialize引数の textcapablity と workspacecapblity を非null( `{}` でよい)にしないと NullReferenceExcepion で初期化に失敗する。
+
+* ⭕️ gotoDefinition
+* ⭕️ references
+* ⭕️ hover
+* ⭕️ diagonostics
+* 🔨 completion IndexOutOfRangeException LspRequestRouter.cs: 161
 
 ### F#
 
 https://github.com/fsprojects/fsharp-language-server
 
-### node-js のやつ
+### node-js
+
+### typescript
 
 ### clang
 
