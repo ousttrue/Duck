@@ -8,8 +8,8 @@ from workspacefolder import util
 from workspacefolder.rpc import dispatcher, json_rpc, pipestream
 from . import upstream
 import logging
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 # types {{{
@@ -59,18 +59,22 @@ class DidChangeTextDocumentParams(NamedTuple):
 
 
 def to_uri(path: pathlib.Path) -> str:
-    return 'file:///' + str(path).replace('\\', '/')
+    return "file:///" + str(path).replace("\\", "/")
 
 
 def create_postion_params(path: pathlib.Path, line: int, col: int) -> dict:
-    params = TextDocumentPositionParams(TextDocumentIdentifier(to_uri(path)),
-                                        Position(line, col))
+    params = TextDocumentPositionParams(
+        TextDocumentIdentifier(to_uri(path)), Position(line, col)
+    )
     return util.to_dict(params)
 
 
 class LanguageServer:
-    def __init__(self, language: str, cwd: pathlib.Path, cmd: str,
-                 *args) -> None:
+    """
+    https://microsoft.github.io/language-server-protocol/specification
+    """
+
+    def __init__(self, language: str, cwd: pathlib.Path, cmd: str, *args) -> None:
         self.language = language
         self.stream = pipestream.PipeStream(cwd, cmd, *args)
         # start stdout reader
@@ -78,7 +82,7 @@ class LanguageServer:
         # start stderr reader
         asyncio.create_task(self.stream.process_stderr(self._on_error))
 
-        self.dispatcher = dispatcher.Dispatcher('PipeStream')
+        self.dispatcher = dispatcher.Dispatcher("PipeStream")
 
         um = upstream.UpstreamHandles(sys.stdout.buffer)
         self.dispatcher.register_methods(um)
@@ -95,85 +99,83 @@ class LanguageServer:
         self.stream.shutdown()
 
     async def _async_request(
-            self, request: json_rpc.JsonRPCRequest
+        self, request: json_rpc.JsonRPCRequest
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
-        '''
+        """
         JSON-RPC Request を送信し、対応する Response が返るのを待つ
-        '''
+        """
         self.stream.send_request(request)
         result = await self.dispatcher.wait_request(request)
         return result
 
     async def async_initialize(
-            self, rootUri: pathlib.Path
+        self, rootUri: pathlib.Path
     ) -> Union[json_rpc.JsonRPCResponse, json_rpc.JsonRPCError]:
         request = self.dispatcher.create_request(
-            'initialize',
+            "initialize",
             rootUri=to_uri(rootUri),
             rootPath=str(rootUri),
-            trace='off',
+            trace="off",
             processId=os.getpid(),
-            capabilities={'workspace': {
-                'applyEdit': True
-            }})
+            capabilities={"textDocument": {}, "workspace": {"applyEdit": True}},
+        )
         return await self._async_request(request)
 
-    async def async_document_highlight(self, path: pathlib.Path, line: int,
-                                       col: int):
+    async def async_document_highlight(self, path: pathlib.Path, line: int, col: int):
         params_dict = create_postion_params(path, line, col)
         request = self.dispatcher.create_request(
-            'textDocument/documentHighlight', **params_dict)
+            "textDocument/documentHighlight", **params_dict
+        )
         return await self._async_request(request)
 
-    async def async_document_definition(self, path: pathlib.Path, line: int,
-                                        col: int):
+    async def async_document_definition(self, path: pathlib.Path, line: int, col: int):
         params_dict = create_postion_params(path, line, col)
-        request = self.dispatcher.create_request('textDocument/definition',
-                                                 **params_dict)
+        request = self.dispatcher.create_request(
+            "textDocument/definition", **params_dict
+        )
         return await self._async_request(request)
 
-    async def async_document_completion(self, path: pathlib.Path, line: int,
-                                        col: int):
+    async def async_document_completion(self, path: pathlib.Path, line: int, col: int):
         params_dict = create_postion_params(path, line, col)
-        request = self.dispatcher.create_request('textDocument/completion',
-                                                 **params_dict)
+        request = self.dispatcher.create_request(
+            "textDocument/completion", **params_dict
+        )
         return await self._async_request(request)
 
-    async def async_document_hover(self, path: pathlib.Path, line: int,
-                                   col: int):
+    async def async_document_hover(self, path: pathlib.Path, line: int, col: int):
         params_dict = create_postion_params(path, line, col)
-        request = self.dispatcher.create_request('textDocument/hover',
-                                                 **params_dict)
+        request = self.dispatcher.create_request("textDocument/hover", **params_dict)
         return await self._async_request(request)
 
-    async def async_document_references(self, path: pathlib.Path, line: int,
-                                        col: int):
+    async def async_document_references(self, path: pathlib.Path, line: int, col: int):
         params_dict = create_postion_params(path, line, col)
-        params_dict['context'] = {'includeDeclaration': True}
-        request = self.dispatcher.create_request('textDocument/references',
-                                                 **params_dict)
+        params_dict["context"] = {"includeDeclaration": True}
+        request = self.dispatcher.create_request(
+            "textDocument/references", **params_dict
+        )
         return await self._async_request(request)
 
     def notify_initialized(self):
-        notify = json_rpc.JsonRPCNotify('initialized', {})
+        notify = json_rpc.JsonRPCNotify("initialized", {})
         self.stream.send_notify(notify)
 
-    def notify_document_open(self, version: int, path: pathlib.Path,
-                             text: str) -> None:
+    def notify_document_open(self, version: int, path: pathlib.Path, text: str) -> None:
 
         params = DidOpenTextDocumentParams(
-            TextDocumentItem(to_uri(path), self.language, version, text))
+            TextDocumentItem(to_uri(path), self.language, version, text)
+        )
 
-        notify = json_rpc.JsonRPCNotify('textDocument/didOpen',
-                                        util.to_dict(params))
+        notify = json_rpc.JsonRPCNotify("textDocument/didOpen", util.to_dict(params))
         self.stream.send_notify(notify)
 
-    def notify_document_change(self, version: int, path: pathlib.Path,
-                               text: str) -> None:
+    def notify_document_change(
+        self, version: int, path: pathlib.Path, text: str
+    ) -> None:
         params = DidChangeTextDocumentParams(
             TextDocumentIdentifier(to_uri(path), version),
-            [TextDocumentContentChangeEvent(text)])
+            [TextDocumentContentChangeEvent(text)],
+        )
 
-        notify = json_rpc.JsonRPCNotify('textDocument/didChange',
-                                        util.to_dict(params))
+        notify = json_rpc.JsonRPCNotify("textDocument/didChange", util.to_dict(params))
         self.stream.send_notify(notify)
+

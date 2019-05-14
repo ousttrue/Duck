@@ -4,7 +4,7 @@ endif
 let g:loaded_workspacefolder = 1
 
 if !exists('g:lsp_filetypes')
-    let g:lsp_filetypes = ['python', 'd']
+    let g:lsp_filetypes = ['python', 'd', 'cs']
 endif
 
 let g:WS_SERVER_REQUEST = 'SERVER_REQUEST'

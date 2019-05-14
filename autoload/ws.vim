@@ -162,7 +162,6 @@ function! s:hover(ret) abort
         " no result
         return
     endif
-
     if !len(a:ret.contents)
         return
     endif
