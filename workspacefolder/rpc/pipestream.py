@@ -48,7 +48,11 @@ class PipeStream:
                 if 'id' in rpc:
                     logger.debug('%s->%s', rpc['id'], util.indent_json(body))
                 else:
-                    logger.debug('-->%s', util.indent_json(body))
+                    method=rpc.get('method')
+                    if method == 'window/logMessage':
+                        pass
+                    else:
+                        logger.debug('-->%s', util.indent_json(body))
                 on_request(rpc)
 
     async def process_stderr(self, on_error):
