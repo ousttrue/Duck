@@ -1,3 +1,8 @@
+function! s:goto(pos) abort
+    let l:start = a:pos.range.start
+    call ws#position#goto(a:pos.uri, l:start.line+1, l:start.character+1)
+endfunction
+
 function! s:is_null_or_empty(ret) abort
     let l:t = type(a:ret)
     if l:t==7
@@ -66,23 +71,20 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " defnition
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! s:goto(ret) abort
+function! s:goto_definition(ret)
     if s:is_null_or_empty(a:ret)
         " no result
         return
     endif
 
-    let l:pos = a:ret[0]
-    " echom printf("goto %s", l:pos)
-    let l:start = l:pos.range.start
-    call ws#position#goto(l:pos.uri, l:start.line+1, l:start.character+1)
+    call s:goto(ret[0])
 endfunction
 
 function! ws#gotoDefinition() abort
     let l:path = expand('%:p')
     let l:line = line('.')-1
     let l:col = col('.')-1
-    call ws#rpc#request(function('s:goto'),
+    call ws#rpc#request(function('s:goto_definition'),
                 \ 'request_document_definition', l:path, l:line, l:col)
 endfunction
 
@@ -90,6 +92,19 @@ endfunction
 " references
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let s:REFENRECES_BUFFER = 'WS_REFERNCES'
+
+function! s:goto_reference()
+    if s:is_null_or_empty(b:items)
+        " no result
+        return
+    endif
+
+    let l:item = b:items[line('.')-1]
+    "close
+    wincmd w
+
+    call s:goto(l:item)
+endfunction
 
 function! s:to_path(uri) abort
     return printf("%s%s", toupper(a:uri[8]), a:uri[9:])
@@ -102,6 +117,10 @@ function! s:references_preview(items)
     " clear
     normal %d
     " update
+
+    " items
+    let b:items = a:items
+    nnoremap <CR> :call <SID>goto_reference()<CR>
 
     echom getcwd()
     for l:item in a:items
@@ -126,6 +145,7 @@ function! s:references(ret) abort
     endif
 
     call ws#position#keep(function('s:references_preview', [a:ret]))
+    wincmd w
 endfunction
 
 function! ws#references() abort
