@@ -7,6 +7,19 @@ from workspacefolder import util
 logger = logging.getLogger(__name__)
 
 
+def normalize(src, key=''):
+    if isinstance(src, dict):
+        return {k: normalize(v, k) for k, v in src.items()}
+    elif isinstance(src, list) or isinstance(src, tuple):
+        return [normalize(v) for v in src]
+    else:
+        # primitive
+        if key == 'uri':
+            return src.replace('C%3A', 'C:')
+        else:
+            return src
+
+
 class PipeStream:
     '''
     Pipe上に
@@ -45,10 +58,13 @@ class PipeStream:
             if request:
                 body = request.body
                 rpc = json.loads(body)
+
+                rpc = normalize(rpc)
+
                 if 'id' in rpc:
                     logger.debug('%s->%s', rpc['id'], util.indent_json(body))
                 else:
-                    method=rpc.get('method')
+                    method = rpc.get('method')
                     if method == 'window/logMessage':
                         pass
                     else:

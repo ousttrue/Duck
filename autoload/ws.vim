@@ -77,7 +77,16 @@ function! s:goto_definition(ret)
         return
     endif
 
-    call s:goto(ret[0])
+    if type(a:ret)==4
+        " dict
+        " ex. omnisharp
+        call s:goto(a:ret)
+    else
+        " list
+        " ex. pyls
+        call s:goto(a:ret[0])
+    endif
+
 endfunction
 
 function! ws#gotoDefinition() abort
