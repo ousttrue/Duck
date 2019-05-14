@@ -10,15 +10,18 @@ Python-3.7
 
 ```
 usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc]
-          [args [args ...]]
+          [task [task ...]]
 ```
 
-### `--logfile file`
+### `--logging`
 
 * ⭕️ ロギングしてデバッグの助けにする。
 * ⭕️ http splitter
-* 🔨 LSPロギング(JSON-RPC)
-* 🔨 DAPロギング
+* 🔨 出力パスをproject_rootに決め打ちする
+* 🔨 LSPロギング(JSON-RPC) `root/.ws/YYYYMMDD.python.lsplog`
+* 🔨 ログからlspを自動運転できるようにする
+* 🔨 DAPロギング `root/.ws/YYYYMMDD.python.daplog`
+* 🔨 ログからdapを自動運転できるようにする
 
 ### `--rpc`
 
@@ -26,9 +29,9 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc]
 * ⭕️ 標準入出力から接続する。
 * ⭕️ JSON-RPC on HTTPもどき(Content-Lengthヘッダのみ)
 
-### `args`
+### `task`
 
-`args` 引数をtask名として順番に実行する。
+`task` 引数をtask名として順番に実行する。
 
 * ⭕️ レジストリ経由でcmake, MSBuild 等を発見する能力。vswhere。
 * タスクの実行
@@ -39,22 +42,18 @@ usage: ws [-h] [--logfile LOGFILE] [--debug] [--rpc]
 * 🔨 実行時の環境変数のコントロール
 * ⭕️ mingwのtoolchain選択
 * ⭕️ 実行ログ
-
-task定義
-
+* ⭕️ Workspace.toml に記述されたtaskを実行する。
 * [Workspace.toml](./neovim/Workspace.toml)
 
 ```toml
 # Workspace.toml
 
 [[tasks]]
-name = 'deps_cmake'
+name = 'deps_cmake' # required
 depends = ['clone']
-cwd = 'neovim/.deps'
+cwd = 'neovim/.deps' # mkdir & chdir
 command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
 ```
-
-* ⭕️ Workspace.toml に記述されたtaskを実行する。
 
 ## vimplugin
 
@@ -66,16 +65,16 @@ command = ['cmake', '../third-party', '-G', 'Visual Studio 15 2017 Win64']
 
 https://microsoft.github.io/debug-adapter-protocol/overview
 
-* VSCodeの拡張を起動して、標準入出力から制御する。
-* vimのjob経由で起動する。
-* AdapterAdapter 的なものになるのだけど、DebugAdapter毎に微妙に挙動違うのでこのレイヤーで差異を吸収する。
+* 🔨 VSCodeの拡張を起動して、標準入出力から制御する。
+* 🔨 vimのjob経由で起動する。
+* 🔨 Workspace.tomlに起動内容を記述
+* 🔨 breakpoint管理
 
 ## LSP
 
 https://microsoft.github.io/language-server-protocol/
 
 * ⭕️ vimのjob経由で起動する。
-* 🔨 state管理(stopped, starting, run)
 * ⭕️ project root。親フォルダを遡りながら確定させる。
     * `python` setup.py
     * `d` dub.json
@@ -84,15 +83,17 @@ https://microsoft.github.io/language-server-protocol/
 ### 通信ログのバッファ
 
 * ⭕️ wfとのJSON-RPC通信のログを表示
+* ⭕️ document毎の表示する
 
 ### 状態表示
 
+* 🔨 state管理(stopped, starting, run)
 * 🔨 workspace(rootpath, language)
 * 🔨 document(relative path from rootpath)
 
 ### Workspaceの管理
 
-* 🔨 違うフォルダのプロジェクトを開いたときにworkspaceを変更する
+* ⭕️ 違うフォルダのプロジェクトを開いたときに新しいworkspaceとして、別のlspプロセスを起動する
 
 ### `textDocument/didOpen`
 
@@ -142,15 +143,22 @@ https://microsoft.github.io/language-server-protocol/
 * 🔨 documentation(preview)
 * 🔨 前のRequestが終わっていない時のキャンセル
 
+### `textDocument/symbol`
+
 ### `textDocument/rename`
 
 ### `textDocument/formatter`
 
 ## LanguageServer
 
+使ってみたサーバー。
+アタッチしてデバッグできる言語じゃないと、うまくいかないときどうしようもない。
+
 ### `python`
 
 #### pyls
+
+https://github.com/palantir/python-language-server
 
 ```
 [mypy] No parent module -- cannot perform relative import
