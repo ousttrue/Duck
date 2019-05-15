@@ -1,7 +1,7 @@
 import logging
 import sys
 import argparse
-from . import rpc, wrap, task
+from . import rpc, task
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,9 @@ def main():
     parser.add_argument('--debug',
                         action='store_true',
                         help='''enable debug switch''')
-    parser.add_argument('args', nargs='*')
+    parser.add_argument('task', nargs='*')
 
     rpc.setup_parser(parser)
-    wrap.setup_parser(parser)
 
     # parse
     parsed = parser.parse_args()
@@ -57,9 +56,6 @@ def main():
         if parsed.rpc:
             # start stdin reader
             rpc.execute(parsed)
-        elif parsed.wrap:
-            # start command line launcher
-            wrap.execute(parsed)
         else:
             # execute tasks
             if not task.execute(parsed):

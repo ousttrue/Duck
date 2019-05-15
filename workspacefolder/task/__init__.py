@@ -72,8 +72,8 @@ def execute(parsed) -> bool:
 
     duck = Duck(duck_file, parsed.debug, platform.system().lower())
 
-    if parsed.args:
-        duck.start(parsed.args)
+    if parsed.task:
+        duck.start(parsed.task)
     else:
         if duck.defaults:
             duck.start(duck.defaults)
